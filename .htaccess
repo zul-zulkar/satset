@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Redirect root access to index.php
+
+RewriteRule ^umum$ umum.php [L]
+RewriteRule ^disabilitas$ disabilitas.php [L]
+RewriteRule ^cs$ cs.php [L]
+RewriteRule ^cs_daftar_pengguna$ cs_daftar_pengguna.php [L]
+RewriteRule ^monitor$ index.php [L]
+RewriteRule ^whatsapp$ whatsapp.php [L]

@@ -1,0 +1,23 @@
+# Composer
+/vendor/
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Cache
+/cache/
+/tmp/
+
+# Node (kalau ada frontend)
+node_modules/
