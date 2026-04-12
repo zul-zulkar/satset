@@ -451,12 +451,12 @@
 
             let aksiHtml;
             if (isDone) {
-                const link = APP_URL_MENU + '/penilaian/' + r.token;
+                const link = APP_URL_MENU + '/penilaian/?token=' + r.token;
                 aksiHtml = `<a href="${link}" target="_blank"
                     class="text-xs text-slate-400 hover:text-white border border-slate-600 hover:border-slate-400 px-2.5 py-1 rounded-lg transition">
                     Lihat Survei</a>`;
             } else if (r.token) {
-                const link = APP_URL_MENU + '/penilaian/' + r.token;
+                const link = APP_URL_MENU + '/penilaian/?token=' + r.token;
                 aksiHtml = `
                     <button onclick="tampilkanQR('${link}', '${escHtml(r.nama).replace(/'/g, '&#39;')}')"
                         class="text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold px-2.5 py-1 rounded-lg transition">
@@ -665,12 +665,12 @@
 
             let aksiHtml;
             if (isDone) {
-                const link = APP_URL_MENU + '/pes/' + r.token_pes;
+                const link = APP_URL_MENU + '/pes/?token=' + r.token_pes;
                 aksiHtml = `<a href="${link}" target="_blank"
                     class="text-xs text-slate-400 hover:text-white border border-slate-600 hover:border-slate-400 px-2.5 py-1 rounded-lg transition">
                     Lihat PES</a>`;
             } else if (r.token_pes) {
-                const link = APP_URL_MENU + '/pes/' + r.token_pes;
+                const link = APP_URL_MENU + '/pes/?token=' + r.token_pes;
                 aksiHtml = `
                     <button onclick="tampilkanQR('${link}', '${escHtml(r.nama).replace(/'/g, '&#39;')}')"
                         class="text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold px-2.5 py-1 rounded-lg transition">

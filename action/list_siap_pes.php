@@ -1,6 +1,7 @@
 <?php
 /**
- * Returns all visitors (PST & non-PST) within a date range for PES.
+ * Returns PST visitors only within a date range for PES.
+ * PST = jenis 'whatsapp', OR jenis 'umum'/'disabilitas' with kunjungan_pst = 1.
  * GET: dari  (Y-m-d, default 3 months ago)
  *      sampai (Y-m-d, default today)
  * Response: JSON { data: [ { id, nama, jenis, nomor, tanggal, token_pes, sudah_pes } ] }
@@ -24,7 +25,8 @@ try {
         "SELECT a.id, a.nama, a.jenis, a.nomor, a.tanggal, a.token_pes,
                 EXISTS(SELECT 1 FROM pes WHERE antrian_id = a.id) AS sudah_pes
          FROM antrian a
-         WHERE a.tanggal BETWEEN ? AND ?
+         WHERE (a.jenis = 'whatsapp' OR (a.jenis IN ('umum','disabilitas') AND a.kunjungan_pst = 1))
+           AND a.tanggal BETWEEN ? AND ?
          ORDER BY a.tanggal DESC, a.id DESC"
     );
     $stmt->bind_param("ss", $dari, $sampai);
