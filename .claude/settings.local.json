@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer install:*)",
+      "Bash(netstat -ano)",
+      "Read(//c/xampp/mysql/data/**)",
+      "Bash(ls c:/xampp/mysql/data/aria_log*)",
+      "Bash(php -r ':*)",
+      "Bash(php -l absensi/login.php)",
+      "Bash(php -l absensi/index.php)",
+      "Bash(php -l absensi/logout.php)",
+      "Bash(php -l absensi/action/absen.php)",
+      "Bash(php -l c:/xampp/htdocs/satset/absensi/admin.php)",
+      "Bash(php -l c:/xampp/htdocs/satset/absensi/action/save_config.php)",
+      "Bash(php -l c:/xampp/htdocs/satset/absensi/index.php)",
+      "Bash(grep -n -A 15 \"CREATE TABLE IF NOT EXISTS \\\\`pes\\\\`\" c:/xampp/htdocs/satset/sql_production/migrasi_production.sql)"
+    ]
+  }
+}

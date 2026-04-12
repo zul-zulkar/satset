@@ -21,3 +21,8 @@ Thumbs.db
 
 # Node (kalau ada frontend)
 node_modules/
+
+# Data pribadi — jangan diupload
+/input/
+
+/backup/

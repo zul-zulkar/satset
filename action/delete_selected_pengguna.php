@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+include '../db.php';
 
 // Pastikan ada data ID yang dikirimkan
 if (isset($_POST['ids'])) {

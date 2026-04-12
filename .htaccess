@@ -1,10 +1,32 @@
+Options +FollowSymLinks -MultiViews
 RewriteEngine On
+RewriteBase /
 
-# Redirect root access to index.php
+# Force allow direct access to cs/antrean_sekarang.php (no rewrite)
+RewriteCond %{REQUEST_URI} ^/cs/antrean_sekarang\.php
+RewriteRule ^ - [L]
 
-RewriteRule ^umum$ umum.php [L]
-RewriteRule ^disabilitas$ disabilitas.php [L]
-RewriteRule ^cs$ cs.php [L]
-RewriteRule ^cs_daftar_pengguna$ cs_daftar_pengguna.php [L]
-RewriteRule ^monitor$ index.php [L]
-RewriteRule ^whatsapp$ whatsapp.php [L]
+# Serve existing files and directories directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Extensionless URL shortcuts
+RewriteRule ^antrean_sekarang$    cs/antrean_sekarang.php [L]
+RewriteRule ^umum$                form/umum.php [L]
+RewriteRule ^disabilitas$         form/disabilitas.php [L]
+RewriteRule ^whatsapp$            form/whatsapp.php [L]
+RewriteRule ^penilaian/([a-f0-9]{32})$ form/penilaian.php?token=$1 [L,QSA]
+RewriteRule ^penilaian$           form/penilaian.php [L]
+RewriteRule ^pes/([a-f0-9]{32})$ form/pes.php?token=$1 [L,QSA]
+RewriteRule ^pes$                 form/pes.php [L]
+RewriteRule ^cs$                  cs/cs.php [L]
+RewriteRule ^cs_daftar_pengguna$  cs/cs_daftar_pengguna.php [L]
+RewriteRule ^monitor$             index.php [L]
+RewriteRule ^menu$                menu.php [L]
+
+# Generic catch-all: /path -> /path.php jika file ada
+# Pakai %{DOCUMENT_ROOT} agar kompatibel di cPanel shared hosting
+RewriteCond %{REQUEST_URI} !\.php$
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}.php -f
+RewriteRule ^(.+)$ $1.php [L,QSA]

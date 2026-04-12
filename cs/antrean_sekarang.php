@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+include '../db.php';
 
 $tanggal = date('Y-m-d');
 $jenis = $_GET['jenis'];
