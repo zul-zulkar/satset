@@ -38,6 +38,11 @@ function renderFormPes($token) {
     // ── Daftar pegawai ──────────────────────────────────────────────────
     $pegawaiList = $mysqli->query("SELECT id, nama, nip FROM pegawai ORDER BY nama ASC")->fetch_all(MYSQLI_ASSOC);
 
+    // ── Daftar instansi dari antrian (untuk autocomplete) ───────────────
+    $instansiList = $mysqli->query(
+        "SELECT DISTINCT instansi FROM antrian WHERE instansi IS NOT NULL AND instansi != '' ORDER BY instansi ASC"
+    )->fetch_all(MYSQLI_ASSOC);
+
     // ── Data kebutuhan dari antrian ─────────────────────────────────────
     $dataItems = [];
     if (!empty($antrian['data_dibutuhkan'])) {
@@ -436,9 +441,16 @@ function renderFormPes($token) {
 
         <!-- ══ a. Kategori Instansi ═══════════════════════════════════════ -->
         <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <h2 class="font-semibold text-slate-700 mb-4">
+            <h2 class="font-semibold text-slate-700 mb-3">
                 a. Kategori Instansi <span class="text-red-500">*</span>
             </h2>
+            <?php if (!empty($instansi) && $instansi !== '-'): ?>
+            <div class="mb-3 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                <i class="fas fa-building text-slate-400 text-xs flex-shrink-0"></i>
+                <span class="text-slate-500 text-xs">Instansi pengunjung:</span>
+                <span class="font-semibold text-slate-700"><?= htmlspecialchars($instansi) ?></span>
+            </div>
+            <?php endif; ?>
             <div class="space-y-2">
                 <?php foreach ($kategoriList as $kat): ?>
                 <label class="flex items-start gap-2.5 text-sm cursor-pointer">
@@ -458,9 +470,15 @@ function renderFormPes($token) {
             </div>
             <div id="kategori-lain-wrap" class="mt-3 <?= (($old['kategori_instansi'] ?? '') === 'Lainnya') ? '' : 'hidden' ?>">
                 <input type="text" name="kategori_instansi_lainnya"
+                    list="instansiDatalist"
                     value="<?= htmlspecialchars($old['kategori_instansi_lainnya'] ?? '') ?>"
-                    placeholder="Sebutkan kategori instansi lainnya…"
+                    placeholder="Sebutkan atau pilih nama instansi…"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <datalist id="instansiDatalist">
+                    <?php foreach ($instansiList as $row): ?>
+                    <option value="<?= htmlspecialchars($row['instansi']) ?>">
+                    <?php endforeach; ?>
+                </datalist>
             </div>
         </div>
 
