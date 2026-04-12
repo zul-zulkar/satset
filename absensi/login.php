@@ -7,7 +7,7 @@ session_start();
 include_once __DIR__ . '/../config.php';
 
 if (!empty($_SESSION['absensi_auth'])) {
-    header('Location: ' . APP_URL . '/absensi/index.php');
+    header('Location: ' . APP_URL . '/absensi');
     exit;
 }
 
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['pegawai_id']       = $pegawai['id'];
                 $_SESSION['pegawai_nama']     = $pegawai['nama'];
                 $_SESSION['pegawai_jabatan']  = $pegawai['jabatan'];
-                header('Location: ' . APP_URL . '/absensi/index.php');
+                header('Location: ' . APP_URL . '/absensi');
                 exit;
             }
         }

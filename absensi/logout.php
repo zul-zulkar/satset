@@ -9,5 +9,5 @@ include_once __DIR__ . '/../config.php';
 // Hapus cookie session dari browser
 setcookie(session_name(), '', time() - 3600, '/');
 
-header('Location: ' . APP_URL . '/absensi/login.php');
+header('Location: ' . APP_URL . '/absensi/login');
 exit;

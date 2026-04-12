@@ -20,7 +20,7 @@ $error = '';
 if (!empty($_POST['admin_password'])) {
     if (password_verify($_POST['admin_password'], ADMIN_PASS_HASH)) {
         $_SESSION['absensi_admin'] = true;
-        header('Location: ' . APP_URL . '/absensi/admin.php');
+        header('Location: ' . APP_URL . '/absensi/admin');
         exit;
     }
     $error = 'Password admin salah.';
@@ -29,7 +29,7 @@ if (!empty($_POST['admin_password'])) {
 // Proses logout admin
 if (isset($_GET['logout'])) {
     unset($_SESSION['absensi_admin']);
-    header('Location: ' . APP_URL . '/absensi/admin.php');
+    header('Location: ' . APP_URL . '/absensi/admin');
     exit;
 }
 
@@ -125,7 +125,7 @@ if ($isAdmin) {
       </form>
 
       <div class="mt-4 text-center">
-        <a href="login.php" class="text-xs text-gray-400 hover:text-gray-600 transition">
+        <a href="<?= APP_BASE ?>/absensi/login" class="text-xs text-gray-400 hover:text-gray-600 transition">
           <i class="fas fa-arrow-left mr-1"></i>Kembali ke login petugas
         </a>
       </div>
@@ -156,11 +156,11 @@ function togglePass() {
         <p class="font-bold text-sm leading-tight">Admin · Konfigurasi PST</p>
         <p class="text-xs text-blue-200">BPS Kabupaten Buleleng</p>
       </div>
-      <a href="index.php" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition font-semibold flex items-center gap-1.5">
+      <a href="<?= APP_BASE ?>/absensi" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition font-semibold flex items-center gap-1.5">
         <i class="fas fa-clipboard-check"></i>
         <span class="hidden sm:inline">Absensi</span>
       </a>
-      <a href="admin.php?logout=1"
+      <a href="<?= APP_BASE ?>/absensi/admin?logout=1"
          onclick="return confirm('Keluar dari panel admin?')"
          class="text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition font-semibold flex items-center gap-1.5">
         <i class="fas fa-right-from-bracket"></i>

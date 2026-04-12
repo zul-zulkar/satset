@@ -120,7 +120,7 @@
                     </div>
                 </a>
 
-                <a href="<?= APP_BASE ?>/absensi/index.php" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                <a href="<?= APP_BASE ?>/absensi" target="_blank" class="card block rounded-2xl p-5 sm:p-6
                     bg-gradient-to-br from-sky-500 to-blue-600
                     border border-sky-500/30">
                     <div class="flex items-center gap-4">
@@ -133,7 +133,7 @@
                     </div>
                 </a>
 
-                <a href="<?= APP_BASE ?>/absensi/admin.php" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                <a href="<?= APP_BASE ?>/absensi/admin" target="_blank" class="card block rounded-2xl p-5 sm:p-6
                     bg-gradient-to-br from-slate-600 to-slate-700
                     border border-slate-500/30">
                     <div class="flex items-center gap-4">
@@ -213,7 +213,7 @@
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                <a href="<?= APP_BASE ?>/cs/daftar_pengguna.php" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                <a href="<?= APP_BASE ?>/cs" target="_blank" class="card block rounded-2xl p-5 sm:p-6
                     bg-gradient-to-br from-violet-600 to-purple-700
                     border border-violet-500/30">
                     <div class="flex items-center gap-4">
@@ -225,7 +225,7 @@
                     </div>
                 </a>
 
-                <a href="<?= APP_BASE ?>/cs/antrean_atur.php" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                <a href="<?= APP_BASE ?>/cs/antrean-atur" target="_blank" class="card block rounded-2xl p-5 sm:p-6
                     bg-gradient-to-br from-orange-500 to-rose-600
                     border border-orange-500/30">
                     <div class="flex items-center gap-4">

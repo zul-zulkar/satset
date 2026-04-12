@@ -7,7 +7,7 @@ session_start();
 include_once __DIR__ . '/../config.php';
 
 if (empty($_SESSION['absensi_auth'])) {
-    header('Location: ' . APP_URL . '/absensi/login.php');
+    header('Location: ' . APP_URL . '/absensi/login');
     exit;
 }
 
@@ -94,12 +94,12 @@ $stmtRekap->close();
             class="flex-shrink-0 flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition font-semibold">
       <i class="fas fa-key"></i>
     </button>
-    <a href="admin.php"
+    <a href="<?= APP_BASE ?>/absensi/admin"
        class="flex-shrink-0 flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition font-semibold">
       <i class="fas fa-gear"></i>
       <span>Admin</span>
     </a>
-    <a href="logout.php"
+    <a href="<?= APP_BASE ?>/absensi/logout"
        onclick="return confirm('Keluar dari sistem absensi?')"
        class="flex-shrink-0 flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition font-semibold">
       <i class="fas fa-right-from-bracket"></i>

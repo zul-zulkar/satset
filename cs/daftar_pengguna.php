@@ -654,7 +654,7 @@ function buildExpandDetail(tr, pData, isPST) {
     var surveyLinkHtml = '';
     if (!hasPenilaian) {
         if (token) {
-            var surveyUrl = APP_URL + '/penilaian/' + token;
+            var surveyUrl = APP_URL + '/penilaian/?token=' + token;
             surveyLinkHtml = linkCard(
                 'fas fa-star text-yellow-500',
                 'Survei Kepuasan',
@@ -675,7 +675,7 @@ function buildExpandDetail(tr, pData, isPST) {
                 "</div>";
         }
     } else if (canRevise && token) {
-        var surveyUrlRevisi = APP_URL + '/penilaian/' + token;
+        var surveyUrlRevisi = APP_URL + '/penilaian/?token=' + token;
         surveyLinkHtml = linkCard(
             'fas fa-edit text-amber-500',
             'Revisi Penilaian',
@@ -687,7 +687,7 @@ function buildExpandDetail(tr, pData, isPST) {
     // ── PES link card ─────────────────────────────────────────────────────────
     var pesLinkHtml = '';
     if (tokenPes) {
-        var pesUrl = APP_URL + '/pes/' + tokenPes;
+        var pesUrl = APP_URL + '/pes/?token=' + tokenPes;
         pesLinkHtml = linkCard(
             'fas fa-clipboard-list text-teal-600',
             'Form PES',
@@ -1222,7 +1222,7 @@ function generateToken(id, btn) {
             if (res.success) {
                 var tr = $('tr[data-id="' + id + '"]');
                 tr.attr('data-token', res.token);
-                var surveyUrl = APP_URL + '/penilaian/' + res.token;
+                var surveyUrl = APP_URL + '/penilaian/?token=' + res.token;
                 var nama = tr.data('nama') || '';
                 var nameEsc = escHtml(nama).replace(/'/g, '&#39;');
                 $('#survey-link-container-' + id).replaceWith(
@@ -1268,7 +1268,7 @@ function generateTokenPes(id, btn) {
             if (res.success) {
                 var tr = $('tr[data-id="' + id + '"]');
                 tr.attr('data-token-pes', res.token);
-                var pesUrl = APP_URL + '/pes/' + res.token;
+                var pesUrl = APP_URL + '/pes/?token=' + res.token;
                 var nama = tr.data('nama') || '';
                 var nameEsc = escHtml(nama).replace(/'/g, '&#39;');
                 $('#pes-link-container-' + id).replaceWith(
