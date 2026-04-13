@@ -66,22 +66,34 @@ function renderFormWhatsapp($judul) {
             $dataJson = json_encode($records, JSON_UNESCAPED_UNICODE);
             $token    = bin2hex(random_bytes(16));
 
+            // Generate nomor antrean (nomor NOT NULL di DB)
+            $stmtN = $mysqli->prepare("SELECT COALESCE(MAX(nomor), 0) AS maxn FROM antrian WHERE tanggal = ? AND jenis = 'whatsapp'");
+            $stmtN->bind_param("s", $tanggal);
+            $stmtN->execute();
+            $nomor_baru = (int)$stmtN->get_result()->fetch_assoc()['maxn'] + 1;
+            $stmtN->close();
+
             $stmt = $mysqli->prepare(
                 "INSERT INTO antrian
                     (nama, email, telepon, jk, pendidikan, kelompok_umur,
-                     pekerjaan, instansi, pemanfaatan_data, data_dibutuhkan, jenis, tanggal, token)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'whatsapp', ?, ?)"
+                     pekerjaan, instansi, pemanfaatan_data, data_dibutuhkan,
+                     kunjungan_pst, jenis, nomor, tanggal, token)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'whatsapp', ?, ?, ?)"
             );
             $stmt->bind_param(
-                "ssssssssssss",
+                "ssssssssssiss",
                 $nama, $email, $telepon,
                 $jk, $pendidikan, $kelompok_umur,
                 $pekerjaan, $instansi,
                 $pemanfaatan, $dataJson,
-                $tanggal, $token
+                $nomor_baru, $tanggal, $token
             );
-            $stmt->execute();
-            $tampilkanForm = false;
+            if ($stmt->execute()) {
+                $tampilkanForm = false;
+            } else {
+                $errorMsg = 'Gagal menyimpan data. Silakan coba lagi.';
+            }
+            $stmt->close();
         }
     }
 

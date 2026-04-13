@@ -7,8 +7,8 @@
 // =====================================================================
 
 // Pilih lingkungan aktif: 'local' atau 'production'
-// define('ENV', 'local');
-define('ENV', 'production');  // ← ganti ke 'production' saat deploy ke hosting
+define('ENV', 'local');
+// define('ENV', 'production');  // ← ganti ke 'production' saat deploy ke hosting
 
 // ── URL ──────────────────────────────────────────────────────────────
 //

@@ -237,6 +237,30 @@
                     </div>
                 </a>
 
+                <a href="<?= APP_BASE ?>/laporan/minggu" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                    bg-gradient-to-br from-sky-600 to-indigo-700
+                    border border-sky-500/30">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">📈</div>
+                        <div>
+                            <div class="font-bold text-base sm:text-lg">Laporan Mingguan</div>
+                            <div class="text-sky-200 text-xs mt-1">Dashboard kunjungan, piket, IKM, PES per pekan</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="<?= APP_BASE ?>/laporan/bulan" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                    bg-gradient-to-br from-violet-600 to-purple-700
+                    border border-violet-500/30">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">📊</div>
+                        <div>
+                            <div class="font-bold text-base sm:text-lg">Laporan Bulanan</div>
+                            <div class="text-violet-200 text-xs mt-1">Dashboard kunjungan, piket, IKM, PES per bulan</div>
+                        </div>
+                    </div>
+                </a>
+
             </div>
         </section>
 
