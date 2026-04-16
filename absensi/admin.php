@@ -61,6 +61,22 @@ if ($isAdmin) {
     if ($resPeg) {
         while ($r = $resPeg->fetch_assoc()) { $daftarPegawai[] = $r; }
     }
+
+    // Jadwal WFH & Libur
+    $jadwalPath     = __DIR__ . '/config/jadwal.json';
+    $jadwal         = file_exists($jadwalPath)
+                    ? (json_decode(file_get_contents($jadwalPath), true) ?? [])
+                    : [];
+    $jadwalWfhCustom = $jadwal['wfh_tanggal'] ?? [];
+    $jadwalLibur     = $jadwal['libur']        ?? [];
+}
+
+// Helper: format tanggal Indonesia singkat
+function formatTanggalAdmin(string $iso): string {
+    $days   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    $months = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    $ts = strtotime($iso);
+    return $days[date('w',$ts)] . ', ' . date('j',$ts) . ' ' . $months[(int)date('n',$ts)] . ' ' . date('Y',$ts);
 }
 ?>
 <!DOCTYPE html>
@@ -267,6 +283,115 @@ function togglePass() {
       </div>
     </div>
 
+    <!-- ── Jadwal WFH & Libur ────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+        <i class="fas fa-calendar-check text-blue-500"></i>
+        <h2 class="font-bold text-gray-800 text-sm">Jadwal WFH &amp; Libur</h2>
+      </div>
+
+      <div class="p-4 space-y-5">
+
+        <!-- WFH Rutin -->
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+            <i class="fas fa-house-laptop text-indigo-500"></i> WFH Rutin
+          </p>
+          <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2.5 text-sm text-indigo-700 flex items-center gap-2">
+            <i class="fas fa-circle-info text-indigo-400 flex-shrink-0"></i>
+            <span>Setiap hari <strong>Jumat</strong> otomatis berlaku WFH — petugas dapat absen dari mana saja.</span>
+          </div>
+        </div>
+
+        <!-- WFH Tambahan -->
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+            <i class="fas fa-calendar-plus text-indigo-400"></i> WFH Tambahan
+            <span class="font-normal normal-case text-gray-400">(kebijakan pemerintah / fakultatif)</span>
+          </p>
+
+          <div id="listWfhCustom" class="space-y-1.5 mb-3">
+            <?php if (empty($jadwalWfhCustom)): ?>
+            <p id="wfhCustomEmpty" class="text-xs text-gray-400 italic py-1">Belum ada jadwal WFH tambahan.</p>
+            <?php else: ?>
+            <?php foreach ($jadwalWfhCustom as $w): ?>
+            <div class="wfh-item flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2.5 text-sm"
+                 data-tanggal="<?= htmlspecialchars($w['tanggal']) ?>">
+              <i class="fas fa-house-laptop text-indigo-400 flex-shrink-0 text-xs"></i>
+              <div class="flex-1 min-w-0">
+                <span class="font-semibold text-indigo-700"><?= htmlspecialchars(formatTanggalAdmin($w['tanggal'])) ?></span>
+                <?php if (!empty($w['keterangan'])): ?>
+                <span class="text-indigo-400 text-xs ml-1">— <?= htmlspecialchars($w['keterangan']) ?></span>
+                <?php endif; ?>
+              </div>
+              <button onclick="hapusJadwal('wfh','<?= htmlspecialchars($w['tanggal']) ?>')"
+                      class="flex-shrink-0 text-red-400 hover:text-red-600 transition p-1">
+                <i class="fas fa-trash text-xs"></i>
+              </button>
+            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="date" id="inputWfhTanggal"
+                   class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 flex-shrink-0">
+            <input type="text" id="inputWfhKet" placeholder="Keterangan (opsional)"
+                   class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <button onclick="tambahJadwal('wfh')"
+                    class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+              Tambah
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100"></div>
+
+        <!-- Libur Nasional -->
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
+            <i class="fas fa-umbrella-beach text-amber-500"></i> Libur Nasional &amp; Cuti Bersama
+          </p>
+
+          <div id="listLibur" class="space-y-1.5 mb-3">
+            <?php if (empty($jadwalLibur)): ?>
+            <p id="liburEmpty" class="text-xs text-gray-400 italic py-1">Belum ada jadwal libur tersimpan.</p>
+            <?php else: ?>
+            <?php foreach ($jadwalLibur as $l): ?>
+            <div class="libur-item flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 text-sm"
+                 data-tanggal="<?= htmlspecialchars($l['tanggal']) ?>">
+              <i class="fas fa-umbrella-beach text-amber-400 flex-shrink-0 text-xs"></i>
+              <div class="flex-1 min-w-0">
+                <span class="font-semibold text-amber-700"><?= htmlspecialchars(formatTanggalAdmin($l['tanggal'])) ?></span>
+                <?php if (!empty($l['keterangan'])): ?>
+                <span class="text-amber-400 text-xs ml-1">— <?= htmlspecialchars($l['keterangan']) ?></span>
+                <?php endif; ?>
+              </div>
+              <button onclick="hapusJadwal('libur','<?= htmlspecialchars($l['tanggal']) ?>')"
+                      class="flex-shrink-0 text-red-400 hover:text-red-600 transition p-1">
+                <i class="fas fa-trash text-xs"></i>
+              </button>
+            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="date" id="inputLiburTanggal"
+                   class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 flex-shrink-0">
+            <input type="text" id="inputLiburKet" placeholder="Nama hari libur (wajib)"
+                   class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <button onclick="tambahJadwal('libur')"
+                    class="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+              Tambah
+            </button>
+          </div>
+        </div>
+
+        <div id="toastJadwal" class="hidden rounded-xl px-4 py-3 text-sm font-medium text-center"></div>
+      </div>
+    </div>
+
     <!-- ── Rekap Absensi Bulanan ─────────────────────────────────────── -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
@@ -357,6 +482,7 @@ function togglePass() {
 var curLat    = <?= $curLat ?>;
 var curLng    = <?= $curLng ?>;
 var curRadius = <?= $curRadius ?>;
+var APP_BASE  = '<?= APP_BASE ?>';
 
 // ── Leaflet map ─────────────────────────────────────────────────────────
 var map     = L.map('map').setView([curLat, curLng], 17);
@@ -449,7 +575,7 @@ function simpan() {
     fd.append('lng',    lng);
     fd.append('radius', radius);
 
-    fetch('action/save_config.php', { method: 'POST', body: fd })
+    fetch(APP_BASE + '/absensi/action/save_config.php', { method: 'POST', body: fd })
         .then(function(r) { return r.json(); })
         .then(function(res) {
             if (res.success) {
@@ -484,7 +610,7 @@ function muatRekapAdmin() {
     var wrap  = document.getElementById('rekapAdminWrap');
     wrap.innerHTML = '<div class="py-6 text-center text-gray-400 text-sm"><i class="fas fa-spinner fa-spin text-xl"></i></div>';
 
-    fetch('action/rekap_admin.php?bulan=' + encodeURIComponent(bulan))
+    fetch(APP_BASE + '/absensi/action/rekap_admin.php?bulan=' + encodeURIComponent(bulan))
         .then(function(r) { return r.json(); })
         .then(function(res) {
             if (!res.data || res.data.length === 0) {
@@ -560,7 +686,7 @@ function kirimResetPass() {
     var fd = new FormData();
     fd.append('pegawai_id',   pegawaiId);
     fd.append('password_baru', passBaru);
-    fetch('action/reset_password.php', { method: 'POST', body: fd })
+    fetch(APP_BASE + '/absensi/action/reset_password.php', { method: 'POST', body: fd })
         .then(function(r){ return r.json(); })
         .then(function(res){
             toastReset(res.message, res.success ? 'success' : 'error');
@@ -631,6 +757,109 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+// ── Jadwal WFH & Libur ──────────────────────────────────────────────────
+function tambahJadwal(tipe) {
+    var inpTgl = document.getElementById(tipe === 'wfh' ? 'inputWfhTanggal' : 'inputLiburTanggal');
+    var inpKet = document.getElementById(tipe === 'wfh' ? 'inputWfhKet'     : 'inputLiburKet');
+    var tanggal = inpTgl.value;
+    var ket     = inpKet.value.trim();
+
+    if (!tanggal) { toastJadwal('Pilih tanggal terlebih dahulu.', 'error'); return; }
+    if (tipe === 'libur' && !ket) { toastJadwal('Nama hari libur wajib diisi.', 'error'); return; }
+
+    var fd = new FormData();
+    fd.append('action',      'add_' + tipe);
+    fd.append('tanggal',     tanggal);
+    fd.append('keterangan',  ket);
+
+    fetch(APP_BASE + '/absensi/action/save_jadwal.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.success) {
+                toastJadwal('Berhasil ditambahkan.', 'success');
+                renderJadwalItem(tipe, tanggal, ket);
+                inpTgl.value = '';
+                inpKet.value = '';
+            } else {
+                toastJadwal(res.message, 'error');
+            }
+        })
+        .catch(function() { toastJadwal('Gagal menghubungi server.', 'error'); });
+}
+
+function hapusJadwal(tipe, tanggal) {
+    if (!confirm('Hapus tanggal ini dari daftar ' + (tipe === 'wfh' ? 'WFH' : 'libur') + '?')) return;
+
+    var fd = new FormData();
+    fd.append('action',  'remove_' + tipe);
+    fd.append('tanggal', tanggal);
+
+    fetch(APP_BASE + '/absensi/action/save_jadwal.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.success) {
+                var el = document.querySelector('.' + tipe + '-item[data-tanggal="' + tanggal + '"]');
+                if (el) el.remove();
+                // tampilkan placeholder kosong jika list sudah habis
+                var listId  = tipe === 'wfh' ? 'listWfhCustom' : 'listLibur';
+                var emptyId = tipe === 'wfh' ? 'wfhCustomEmpty' : 'liburEmpty';
+                if (!document.querySelector('#' + listId + ' .' + tipe + '-item') && !document.getElementById(emptyId)) {
+                    var p = document.createElement('p');
+                    p.id = emptyId;
+                    p.className = 'text-xs text-gray-400 italic py-1';
+                    p.textContent = tipe === 'wfh' ? 'Belum ada jadwal WFH tambahan.' : 'Belum ada jadwal libur tersimpan.';
+                    document.getElementById(listId).appendChild(p);
+                }
+                toastJadwal('Berhasil dihapus.', 'success');
+            } else {
+                toastJadwal(res.message, 'error');
+            }
+        })
+        .catch(function() { toastJadwal('Gagal menghubungi server.', 'error'); });
+}
+
+function renderJadwalItem(tipe, tanggal, ket) {
+    var emptyId = tipe === 'wfh' ? 'wfhCustomEmpty' : 'liburEmpty';
+    var emp = document.getElementById(emptyId);
+    if (emp) emp.remove();
+
+    var colorBg  = tipe === 'wfh' ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100';
+    var colorIc  = tipe === 'wfh' ? 'text-indigo-400' : 'text-amber-400';
+    var colorTx  = tipe === 'wfh' ? 'text-indigo-700' : 'text-amber-700';
+    var colorSub = tipe === 'wfh' ? 'text-indigo-400' : 'text-amber-400';
+    var icon     = tipe === 'wfh' ? 'fa-house-laptop'  : 'fa-umbrella-beach';
+    var label    = formatTglJS(tanggal);
+    var ketHtml  = ket ? ' <span class="' + colorSub + ' text-xs ml-1">— ' + escHtmlAdmin(ket) + '</span>' : '';
+    var tglEsc   = escHtmlAdmin(tanggal);
+
+    var html = '<div class="' + tipe + '-item flex items-center gap-2 ' + colorBg + ' border rounded-xl px-3 py-2.5 text-sm" data-tanggal="' + tglEsc + '">' +
+        '<i class="fas ' + icon + ' ' + colorIc + ' flex-shrink-0 text-xs"></i>' +
+        '<div class="flex-1 min-w-0"><span class="font-semibold ' + colorTx + '">' + escHtmlAdmin(label) + '</span>' + ketHtml + '</div>' +
+        '<button onclick="hapusJadwal(\'' + tipe + '\',\'' + tglEsc + '\')" class="flex-shrink-0 text-red-400 hover:text-red-600 transition p-1">' +
+          '<i class="fas fa-trash text-xs"></i></button></div>';
+
+    document.getElementById(tipe === 'wfh' ? 'listWfhCustom' : 'listLibur').insertAdjacentHTML('beforeend', html);
+}
+
+function formatTglJS(iso) {
+    var d    = new Date(iso + 'T00:00:00');
+    var hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][d.getDay()];
+    var bln  = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][d.getMonth()];
+    return hari + ', ' + d.getDate() + ' ' + bln + ' ' + d.getFullYear();
+}
+
+function toastJadwal(msg, type) {
+    var el = document.getElementById('toastJadwal');
+    el.className = 'rounded-xl px-4 py-3 text-sm font-medium text-center ' +
+        (type === 'success'
+            ? 'bg-green-100 text-green-700 border border-green-200'
+            : 'bg-red-100 text-red-700 border border-red-200');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(el._t);
+    el._t = setTimeout(function() { el.classList.add('hidden'); }, 4000);
+}
 </script>
 
 <?php endif; ?>

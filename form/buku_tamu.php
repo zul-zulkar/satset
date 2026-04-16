@@ -28,8 +28,12 @@ function renderForm($jenis, $judul) {
         $email = trim($_POST['email'] ?? '');
         $isPSTPost = (($_POST['keperluan_pst'] ?? '') === '1');
 
+        $telepon = trim($_POST['telepon'] ?? '');
+
         if (!preg_match("/^[a-zA-Z'\s]+$/u", $nama)) {
             $errorMsg = "Nama hanya boleh berisi huruf, spasi, dan tanda petik satu (').";
+        } elseif (empty($telepon)) {
+            $errorMsg = 'Nomor HP wajib diisi.';
         } elseif ($isPSTPost && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errorMsg = 'Format email tidak valid.';
         } else {
@@ -170,6 +174,13 @@ function renderForm($jenis, $judul) {
                 </div>
 
                 <div>
+                    <label class="block mb-1 font-medium">Nomor HP <span class="text-red-500">*</span></label>
+                    <input id="telepon" name="telepon" required placeholder="08xxxxxxxxxx"
+                           value="<?= htmlspecialchars($old['telepon'] ?? '') ?>"
+                           class="w-full border p-2 rounded">
+                </div>
+
+                <div>
                     <label class="block mb-1 font-medium">Jenis Kelamin <span class="text-red-500">*</span></label>
                     <select id="jk" name="jk" required class="w-full border p-2 rounded">
                         <option value="" disabled <?= empty($old['jk']) ? 'selected' : '' ?>>Pilih Jenis Kelamin</option>
@@ -211,18 +222,11 @@ function renderForm($jenis, $judul) {
                 <div id="pst-fields" class="<?= $isPST ? '' : 'hidden' ?> space-y-4 border-t border-blue-100 pt-4">
                     <p class="text-xs text-blue-600 font-semibold uppercase tracking-wide">Data Kunjungan PST</p>
 
-                    <!-- Email & Nomor HP (khusus PST) -->
+                    <!-- Email (khusus PST) -->
                     <div>
                         <label class="block mb-1 font-medium">Email <span class="text-red-500">*</span></label>
                         <input id="email" name="email" type="email" placeholder="contoh@email.com"
                                value="<?= htmlspecialchars($old['email'] ?? '') ?>"
-                               class="w-full border p-2 rounded">
-                    </div>
-
-                    <div>
-                        <label class="block mb-1 font-medium">Nomor HP <span class="text-red-500">*</span></label>
-                        <input id="telepon" name="telepon" placeholder="08xxxxxxxxxx"
-                               value="<?= htmlspecialchars($old['telepon'] ?? '') ?>"
                                class="w-full border p-2 rounded">
                     </div>
 
@@ -402,6 +406,10 @@ function renderForm($jenis, $judul) {
                 if (!/^[a-zA-Z'\s]+$/.test(nama)) {
                     alert("Nama hanya boleh berisi huruf, spasi, dan tanda petik satu."); e.preventDefault(); return;
                 }
+                var telepon = document.getElementById('telepon').value.trim();
+                if (!telepon) {
+                    alert('Nomor HP wajib diisi.'); document.getElementById('telepon').focus(); e.preventDefault(); return;
+                }
                 var kepPST = document.querySelector('input[name="keperluan_pst"]:checked');
                 if (!kepPST) {
                     alert('Pilih keperluan kunjungan Anda.'); e.preventDefault(); return;
@@ -417,10 +425,6 @@ function renderForm($jenis, $judul) {
                     var email = document.getElementById('email').value.trim();
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                         alert('Format email tidak valid.'); document.getElementById('email').focus(); e.preventDefault(); return;
-                    }
-                    var telepon = document.getElementById('telepon').value.trim();
-                    if (!telepon) {
-                        alert('Nomor HP wajib diisi.'); document.getElementById('telepon').focus(); e.preventDefault(); return;
                     }
                     if (!document.querySelector('input[name="pendidikan"]:checked')) {
                         alert('Pilih pendidikan tertinggi.'); e.preventDefault(); return;

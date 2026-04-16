@@ -1,0 +1,17 @@
+{
+    "wfh_hari": [
+        5
+    ],
+    "wfh_tanggal": [
+        {
+            "tanggal": "2026-06-16",
+            "keterangan": "Penampahan Galungan"
+        }
+    ],
+    "libur": [
+        {
+            "tanggal": "2026-05-01",
+            "keterangan": "Hari Buruh Internasional"
+        }
+    ]
+}

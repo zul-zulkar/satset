@@ -26,6 +26,32 @@ $PST_LAT    = (float) ($_pstCfg['lat']    ?? -8.1134);
 $PST_LNG    = (float) ($_pstCfg['lng']    ?? 115.0940);
 $PST_RADIUS = (int)   ($_pstCfg['radius'] ?? 100);
 
+// ── Jadwal WFH & Libur ───────────────────────────────────────────────
+$_jadwal    = file_exists(__DIR__ . '/config/jadwal.json')
+            ? (json_decode(file_get_contents(__DIR__ . '/config/jadwal.json'), true) ?? [])
+            : [];
+$_wfhHari   = $_jadwal['wfh_hari']    ?? [5];          // 5 = Jumat
+$_wfhCustom = array_column($_jadwal['wfh_tanggal'] ?? [], 'tanggal');
+$_liburArr  = array_column($_jadwal['libur']        ?? [], 'tanggal');
+$_todayDow  = (int) date('w');   // 0=Min … 6=Sab
+
+$isWFH   = in_array($_todayDow, $_wfhHari) || in_array(date('Y-m-d'), $_wfhCustom);
+$isLibur = in_array(date('Y-m-d'), $_liburArr);
+if ($isLibur) { $isWFH = false; }   // libur > WFH
+
+$wfhKet = '';
+if (in_array(date('Y-m-d'), $_wfhCustom)) {
+    foreach ($_jadwal['wfh_tanggal'] ?? [] as $_w) {
+        if ($_w['tanggal'] === date('Y-m-d')) { $wfhKet = $_w['keterangan'] ?? ''; break; }
+    }
+} elseif ($isWFH) {
+    $wfhKet = 'Hari Jumat — WFH rutin';
+}
+$liburKet = '';
+foreach ($_jadwal['libur'] ?? [] as $_l) {
+    if ($_l['tanggal'] === date('Y-m-d')) { $liburKet = $_l['keterangan'] ?? ''; break; }
+}
+
 // ── Tanggal hari ini (tanpa IntlDateFormatter) ────────────────────────
 $today  = date('Y-m-d');
 $ts     = strtotime($today);
@@ -154,6 +180,30 @@ $stmtRekap->close();
     <span><?= htmlspecialchars($hariIni) ?></span>
     <span class="ml-auto font-mono font-bold text-gray-700 tabular-nums" id="jamSekarang">--:--:--</span>
   </div>
+
+  <?php if ($isLibur): ?>
+  <!-- Banner Libur -->
+  <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl px-4 py-3">
+    <div class="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-umbrella-beach text-amber-600 text-lg"></i>
+    </div>
+    <div>
+      <p class="font-bold text-sm">Hari Libur</p>
+      <p class="text-xs text-amber-600"><?= htmlspecialchars($liburKet ?: 'Tidak perlu absensi hari ini') ?></p>
+    </div>
+  </div>
+  <?php elseif ($isWFH): ?>
+  <!-- Banner WFH -->
+  <div class="flex items-center gap-3 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-2xl px-4 py-3">
+    <div class="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-house-laptop text-indigo-600 text-lg"></i>
+    </div>
+    <div>
+      <p class="font-bold text-sm">Mode WFH Aktif</p>
+      <p class="text-xs text-indigo-500"><?= htmlspecialchars($wfhKet ?: 'Absensi dapat dilakukan dari mana saja') ?></p>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <!-- ── GPS Status Card ────────────────────────────────────────────── -->
   <div id="gpsCard" class="rounded-2xl border-2 border-gray-200 bg-white p-4 transition-all duration-500">
@@ -300,6 +350,10 @@ var PST_LAT      = <?= $PST_LAT ?>;
 var PST_LNG      = <?= $PST_LNG ?>;
 var PST_RADIUS   = <?= $PST_RADIUS ?>;
 var ABSEN_URL    = 'action/absen.php';
+var IS_WFH       = <?= $isWFH   ? 'true' : 'false' ?>;
+var IS_LIBUR     = <?= $isLibur  ? 'true' : 'false' ?>;
+var WFH_KET      = <?= json_encode($wfhKet) ?>;
+var LIBUR_KET    = <?= json_encode($liburKet) ?>;
 
 var currentLat   = null;
 var currentLng   = null;
@@ -328,6 +382,8 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 // ── GPS ───────────────────────────────────────────────────────────────
 function getLocation() {
+    if (IS_LIBUR) { setGpsState('libur'); return; }
+    if (IS_WFH)   { withinRange = true; setGpsState('wfh'); updateButtons(); return; }
     setGpsState('loading');
     if (!navigator.geolocation) { setGpsState('unsupported'); return; }
     navigator.geolocation.getCurrentPosition(
@@ -412,6 +468,24 @@ function setGpsState(state, dist, errMsg) {
         desc.textContent = errMsg || 'Tidak dapat membaca lokasi';
         retry.classList.remove('hidden');
 
+    } else if (state === 'wfh') {
+        card.classList.add('border-indigo-300', 'bg-indigo-50');
+        iconWrap.className = 'w-12 h-12 rounded-full bg-indigo-200 flex items-center justify-center flex-shrink-0';
+        icon.classList.add('fas', 'fa-house-laptop', 'text-indigo-600');
+        title.className = 'font-bold text-indigo-700 text-sm';
+        title.textContent = 'Mode WFH — absensi dari mana saja';
+        desc.className  = 'text-xs text-indigo-500 mt-0.5';
+        desc.textContent = WFH_KET || 'Lokasi tidak diwajibkan hari ini';
+
+    } else if (state === 'libur') {
+        card.classList.add('border-amber-300', 'bg-amber-50');
+        iconWrap.className = 'w-12 h-12 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0';
+        icon.classList.add('fas', 'fa-umbrella-beach', 'text-amber-600');
+        title.className = 'font-bold text-amber-700 text-sm';
+        title.textContent = 'Hari Libur';
+        desc.className  = 'text-xs text-amber-600 mt-0.5';
+        desc.textContent = LIBUR_KET || 'Tidak perlu absensi hari ini';
+
     } else { // unsupported
         card.classList.add('border-gray-300', 'bg-gray-50');
         iconWrap.className = 'w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0';
@@ -427,6 +501,13 @@ function setGpsState(state, dist, errMsg) {
 function updateButtons() {
     var btn = document.getElementById('btnAbsen');
     var base = 'w-full flex flex-col items-center gap-2 py-5 rounded-xl font-semibold text-sm transition-all ';
+
+    if (IS_LIBUR) {
+        btn.disabled  = true;
+        btn.className = base + 'bg-amber-100 text-amber-400 cursor-not-allowed';
+        btn.innerHTML = '<i class="fas fa-umbrella-beach text-2xl"></i><span>Hari Libur</span>';
+        return;
+    }
 
     if (!JAM_MASUK) {
         // Belum masuk — wajib dalam jangkauan GPS

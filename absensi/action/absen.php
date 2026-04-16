@@ -36,6 +36,22 @@ if (!in_array($tipe, ['masuk', 'keluar'])) {
 $today = date('Y-m-d');
 $now   = date('Y-m-d H:i:s');
 
+// ── Cek hari libur (server-side guard) ────────────────────────────────
+$_jadwalPath = __DIR__ . '/../config/jadwal.json';
+if (file_exists($_jadwalPath)) {
+    $_jadwal = json_decode(file_get_contents($_jadwalPath), true) ?? [];
+    foreach ($_jadwal['libur'] ?? [] as $_l) {
+        if ($_l['tanggal'] === $today) {
+            $ket = $_l['keterangan'] ?? '';
+            echo json_encode([
+                'success' => false,
+                'message' => 'Hari ini libur' . ($ket ? ': ' . $ket : '') . '. Tidak perlu absensi.',
+            ]);
+            exit;
+        }
+    }
+}
+
 if ($tipe === 'masuk') {
     // Cek apakah sudah absen masuk hari ini
     $stmtEx = $mysqli->prepare(
