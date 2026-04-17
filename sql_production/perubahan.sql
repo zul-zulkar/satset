@@ -160,6 +160,25 @@ ALTER TABLE `penilaian_data_item`
   ADD COLUMN `status_perolehan`  ENUM('Ya, sesuai','Ya, tidak sesuai','Tidak diperoleh','Belum diperoleh'),
   ADD COLUMN `untuk_perencanaan` ENUM('ya','tidak');
 
+-- Tambah jenis 'surat' ke ENUM antrian
+ALTER TABLE `antrian`
+  MODIFY COLUMN `jenis` ENUM('umum','disabilitas','whatsapp','surat');
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+--  BAGIAN 2b: TABEL PES_KEBUTUHAN_DATA (baru — selalu aman dijalankan)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS `pes_kebutuhan_data` (
+  `id`               INT          AUTO_INCREMENT PRIMARY KEY,
+  `pes_id`           INT          NOT NULL,
+  `butir_kebutuhan`  TEXT         NULL,
+  `jenis_sumber_data` VARCHAR(100) NULL,
+  `judul_sumber_data` TEXT         NULL,
+  `tahun_sumber_data` INT          NULL,
+  CONSTRAINT `fk_pkd_pes` FOREIGN KEY (`pes_id`) REFERENCES `pes`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 -- ─────────────────────────────────────────────────────────────────────────────
 --  BAGIAN 3: TABEL ABSENSI PIKET PST (baru — selalu aman dijalankan)

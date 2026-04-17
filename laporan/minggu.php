@@ -45,6 +45,9 @@ foreach ($defWeeks as $w) {
 $selYear  = max(2020, min(2030, (int)($_GET['tahun'] ?? $defYear)));
 $selMonth = max(1, min(12, (int)($_GET['bulan'] ?? $defMonth)));
 $selWeek  = (int)($_GET['pekan'] ?? $defWeek);
+$filterJenis = in_array(($_GET['filter_jenis'] ?? ''), ['whatsapp','surat','langsung','umum','disabilitas'])
+    ? $_GET['filter_jenis'] : 'all';
+$fParam = $filterJenis !== 'all' ? '&filter_jenis=' . urlencode($filterJenis) : '';
 
 $weeksInMonth = getWeeksInMonth($selYear, $selMonth);
 $selWeek      = max(1, min(count($weeksInMonth), $selWeek));
@@ -58,8 +61,8 @@ if ($pW < 1) { $pM--; if ($pM < 1) { $pM = 12; $pY--; } $pW = count(getWeeksInMo
 $nW = $selWeek + 1; $nM = $selMonth; $nY = $selYear;
 if ($nW > count($weeksInMonth)) { $nM++; if ($nM > 12) { $nM = 1; $nY++; } $nW = 1; }
 
-$prevUrl = APP_BASE . "/laporan/minggu?tahun=$pY&bulan=$pM&pekan=$pW";
-$nextUrl = APP_BASE . "/laporan/minggu?tahun=$nY&bulan=$nM&pekan=$nW";
+$prevUrl = APP_BASE . "/laporan/minggu?tahun=$pY&bulan=$pM&pekan=$pW$fParam";
+$nextUrl = APP_BASE . "/laporan/minggu?tahun=$nY&bulan=$nM&pekan=$nW$fParam";
 
 // ── Hari kerja (Mon–Fri) ──────────────────────────────────────────────────────
 $dayKeys  = [];
@@ -77,6 +80,19 @@ $allAntrian = $st->get_result()->fetch_all(MYSQLI_ASSOC); $st->close();
 $isPST = fn($r) => $r['jenis'] === 'whatsapp' || (!empty($r['kunjungan_pst']) && $r['kunjungan_pst'] == 1);
 $pstRows    = array_values(array_filter($allAntrian, $isPST));
 $nonPstRows = array_values(array_filter($allAntrian, fn($r) => !($isPST)($r)));
+
+// Apply jenis filter to PST rows
+if ($filterJenis === 'whatsapp') {
+    $pstRows = array_values(array_filter($pstRows, fn($r) => $r['jenis'] === 'whatsapp'));
+} elseif ($filterJenis === 'surat') {
+    $pstRows = array_values(array_filter($pstRows, fn($r) => $r['jenis'] === 'surat'));
+} elseif ($filterJenis === 'langsung') {
+    $pstRows = array_values(array_filter($pstRows, fn($r) => in_array($r['jenis'], ['umum', 'disabilitas'])));
+} elseif ($filterJenis === 'umum') {
+    $pstRows = array_values(array_filter($pstRows, fn($r) => $r['jenis'] === 'umum'));
+} elseif ($filterJenis === 'disabilitas') {
+    $pstRows = array_values(array_filter($pstRows, fn($r) => $r['jenis'] === 'disabilitas'));
+}
 
 // 2. Absensi piket
 $st = $mysqli->prepare(
@@ -282,78 +298,127 @@ $periodLabel = "Pekan {$selWeek} — {$bulanIndo[$selMonth]} {$selYear} (" .
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen">
 
-<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
-<header class="bg-white border-b border-gray-200 sticky top-0 z-30 no-print">
-  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-    <a href="<?= APP_BASE ?>/" class="text-gray-400 hover:text-blue-600 text-sm">
-      <i class="fas fa-home mr-1"></i>Menu
-    </a>
-    <span class="text-gray-300">/</span>
-    <span class="text-sm font-semibold text-gray-700">Laporan Mingguan</span>
+<!-- ── SIDEBAR + MOBILE TOPBAR ───────────────────────────────────────────── -->
 
-    <div class="ml-auto flex items-center gap-2 flex-wrap">
-      <!-- Prev / Next -->
-      <a href="<?= htmlspecialchars($prevUrl) ?>"
-         class="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
-        <i class="fas fa-chevron-left text-xs"></i> Sebelumnya
+<!-- Mobile top bar -->
+<div class="lg:hidden fixed top-0 inset-x-0 z-40 bg-white border-b border-gray-200 flex items-center gap-2 px-3 h-11 no-print">
+  <button onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600">
+    <i class="fas fa-bars"></i>
+  </button>
+  <span class="text-sm font-semibold text-gray-700 truncate">Laporan Mingguan</span>
+</div>
+
+<!-- Overlay -->
+<div id="sidebarOverlay" onclick="closeSidebar()"
+     class="hidden fixed inset-0 bg-black/30 z-40 no-print"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar"
+     class="fixed top-0 left-0 h-full w-56 bg-white border-r border-gray-200 z-50
+            flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200 no-print overflow-y-auto">
+
+  <!-- Judul -->
+  <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
+    <div>
+      <a href="<?= APP_BASE ?>/" class="text-xs text-gray-400 hover:text-blue-600 flex items-center gap-1">
+        <i class="fas fa-home text-xs"></i> Menu Utama
       </a>
-
-      <!-- Selector -->
-      <form method="GET" class="flex items-center gap-2" id="selectorForm">
-        <select name="bulan" onchange="updatePekanOptions(); this.form.submit()"
-                class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <?php foreach ($bulanIndo as $i => $nm): if (!$i) continue; ?>
-          <option value="<?= $i ?>" <?= $i === $selMonth && (int)($selYear) === $selYear ? 'selected' : '' ?>>
-            <?= $nm ?>
-          </option>
-          <?php endforeach; ?>
-        </select>
-        <select name="tahun" onchange="this.form.submit()"
-                class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <?php for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++): ?>
-          <option value="<?= $y ?>" <?= $y === $selYear ? 'selected' : '' ?>><?= $y ?></option>
-          <?php endfor; ?>
-        </select>
-        <select name="pekan" id="pekanSelect"
-                class="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <?php foreach ($weeksInMonth as $w): ?>
-          <option value="<?= $w['num'] ?>" <?= $w['num'] === $selWeek ? 'selected' : '' ?>>
-            Pekan <?= $w['num'] ?>
-            (<?= (new DateTime($w['monday']))->format('d') ?>–<?= (new DateTime($w['friday']))->format('d') ?>)
-          </option>
-          <?php endforeach; ?>
-        </select>
-        <button type="submit" class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-          <i class="fas fa-search text-xs mr-1"></i>Tampilkan
-        </button>
-      </form>
-
-      <a href="<?= htmlspecialchars($nextUrl) ?>"
-         class="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
-        Berikutnya <i class="fas fa-chevron-right text-xs"></i>
-      </a>
-
-      <!-- Link ke Laporan Bulanan -->
-      <a href="<?= APP_BASE ?>/laporan/bulan?bulan=<?= $selMonth ?>&tahun=<?= $selYear ?>"
-         class="text-sm px-3 py-1.5 rounded-lg border border-violet-200 text-violet-600 hover:bg-violet-50 transition">
-        <i class="fas fa-calendar-alt text-xs mr-1"></i>Per Bulan
-      </a>
-
-      <button onclick="window.print()"
-              class="text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition text-gray-500">
-        <i class="fas fa-print mr-1"></i>Cetak
-      </button>
-
-      <button id="btnPDF" onclick="downloadPDF()"
-              class="text-sm px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition flex items-center gap-1.5 font-medium shadow-sm">
-        <i class="fas fa-file-pdf text-xs"></i>Unduh PDF
-      </button>
+      <div class="text-sm font-semibold text-gray-700 mt-0.5">Laporan Mingguan</div>
     </div>
+    <button onclick="closeSidebar()" class="lg:hidden p-1 rounded hover:bg-gray-100 text-gray-400">
+      <i class="fas fa-times text-xs"></i>
+    </button>
   </div>
-</header>
 
-<!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
-<main id="reportContent" class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+  <!-- Navigasi Periode -->
+  <div class="px-3 py-3 border-b border-gray-100 space-y-2">
+    <div class="text-xs font-medium text-gray-400 uppercase tracking-wide">Periode</div>
+    <div class="flex gap-1">
+      <a href="<?= htmlspecialchars($prevUrl) ?>"
+         class="flex-1 text-center text-xs py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
+        <i class="fas fa-chevron-left"></i> Sblm
+      </a>
+      <a href="<?= htmlspecialchars($nextUrl) ?>"
+         class="flex-1 text-center text-xs py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
+        Brktn <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
+    <form method="GET" id="selectorForm" class="space-y-1.5">
+      <input type="hidden" name="filter_jenis" value="<?= $filterJenis !== 'all' ? htmlspecialchars($filterJenis) : '' ?>">
+      <select name="bulan" onchange="updatePekanOptions(); this.form.submit()"
+              class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <?php foreach ($bulanIndo as $i => $nm): if (!$i) continue; ?>
+        <option value="<?= $i ?>" <?= $i === $selMonth ? 'selected' : '' ?>><?= $nm ?></option>
+        <?php endforeach; ?>
+      </select>
+      <select name="tahun" onchange="this.form.submit()"
+              class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <?php for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++): ?>
+        <option value="<?= $y ?>" <?= $y === $selYear ? 'selected' : '' ?>><?= $y ?></option>
+        <?php endfor; ?>
+      </select>
+      <select name="pekan" id="pekanSelect"
+              class="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <?php foreach ($weeksInMonth as $w): ?>
+        <option value="<?= $w['num'] ?>" <?= $w['num'] === $selWeek ? 'selected' : '' ?>>
+          P<?= $w['num'] ?> (<?= (new DateTime($w['monday']))->format('d') ?>–<?= (new DateTime($w['friday']))->format('d') ?>)
+        </option>
+        <?php endforeach; ?>
+      </select>
+      <button type="submit" class="w-full text-sm py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-1">
+        <i class="fas fa-search text-xs"></i> Tampilkan
+      </button>
+    </form>
+  </div>
+
+  <!-- Filter Jenis -->
+  <div class="px-3 py-3 border-b border-gray-100 space-y-1.5">
+    <div class="text-xs font-medium text-gray-400 uppercase tracking-wide">Filter Jenis</div>
+    <?php
+    $baseUrl     = APP_BASE . "/laporan/minggu?tahun=$selYear&bulan=$selMonth&pekan=$selWeek";
+    $filterOpts  = ['all' => 'Semua', 'whatsapp' => 'WhatsApp', 'surat' => 'Via Surat', 'langsung' => 'Kunjungan Langsung', 'umum' => 'Umum', 'disabilitas' => 'Disabilitas'];
+    $filterActiv = ['all' => 'bg-blue-600 text-white', 'whatsapp' => 'bg-green-600 text-white', 'surat' => 'bg-amber-600 text-white', 'langsung' => 'bg-indigo-600 text-white', 'umum' => 'bg-blue-500 text-white', 'disabilitas' => 'bg-purple-600 text-white'];
+    ?>
+    <?php foreach ($filterOpts as $key => $label):
+      $isActive = $filterJenis === $key;
+      $href = $key === 'all' ? $baseUrl : "$baseUrl&filter_jenis=" . urlencode($key);
+      $isSub = in_array($key, ['umum', 'disabilitas']);
+    ?>
+    <?php if ($isSub): ?>
+    <a href="<?= htmlspecialchars($href) ?>"
+       class="flex items-center gap-1 ml-3 text-xs px-2 py-1 rounded-lg font-medium transition <?= $isActive ? $filterActiv[$key] : 'border border-gray-200 text-gray-500 hover:bg-gray-50' ?>">
+      <span class="text-gray-300 leading-none">└</span><?= $label ?>
+    </a>
+    <?php else: ?>
+    <a href="<?= htmlspecialchars($href) ?>"
+       class="block text-xs px-3 py-1.5 rounded-lg font-medium transition <?= $isActive ? $filterActiv[$key] : 'border border-gray-200 text-gray-500 hover:bg-gray-50' ?>">
+      <?= $label ?>
+    </a>
+    <?php endif; ?>
+    <?php endforeach; ?>
+  </div>
+
+  <!-- Aksi -->
+  <div class="px-3 py-3 space-y-1.5">
+    <div class="text-xs font-medium text-gray-400 uppercase tracking-wide">Aksi</div>
+    <a href="<?= APP_BASE ?>/laporan/bulan?bulan=<?= $selMonth ?>&tahun=<?= $selYear ?>"
+       class="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-violet-200 text-violet-600 hover:bg-violet-50 transition">
+      <i class="fas fa-calendar-alt text-xs w-4 text-center"></i> Per Bulan
+    </a>
+    <button onclick="window.print()"
+            class="w-full flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition text-gray-600">
+      <i class="fas fa-print text-xs w-4 text-center"></i> Cetak
+    </button>
+    <button id="btnPDF" onclick="downloadPDF()"
+            class="w-full flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition font-medium">
+      <i class="fas fa-file-pdf text-xs w-4 text-center"></i> Unduh PDF
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN WRAPPER ───────────────────────────────────────────────────────── -->
+<div class="lg:pl-56">
+<main id="reportContent" class="max-w-7xl mx-auto px-4 pt-14 lg:pt-6 pb-6 space-y-6">
 
   <!-- Judul periode -->
   <div class="flex items-start gap-4">
@@ -942,6 +1007,7 @@ $periodLabel = "Pekan {$selWeek} — {$bulanIndo[$selMonth]} {$selYear} (" .
 <footer class="text-center text-gray-400 text-xs py-8">
   BPS Kabupaten Buleleng · Sistem Antrean v2 · Laporan Mingguan
 </footer>
+</div><!-- end .lg:pl-56 -->
 
 <!-- ── CHART.JS ───────────────────────────────────────────────────────────── -->
 <script>
@@ -1027,6 +1093,31 @@ async function downloadPDF() {
 
   btn.disabled = false;
   btn.innerHTML = '<i class="fas fa-file-pdf text-xs"></i> Unduh PDF';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.innerWidth < 1024 && localStorage.getItem('sidebarOpen') === '1') {
+    document.getElementById('sidebar').classList.remove('-translate-x-full');
+    document.getElementById('sidebarOverlay').classList.remove('hidden');
+  }
+});
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('sidebarOverlay');
+  if (s.classList.contains('-translate-x-full')) {
+    s.classList.remove('-translate-x-full');
+    o.classList.remove('hidden');
+    localStorage.setItem('sidebarOpen', '1');
+  } else {
+    s.classList.add('-translate-x-full');
+    o.classList.add('hidden');
+    localStorage.removeItem('sidebarOpen');
+  }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.add('-translate-x-full');
+  document.getElementById('sidebarOverlay').classList.add('hidden');
+  localStorage.removeItem('sidebarOpen');
 }
 </script>
 </body>

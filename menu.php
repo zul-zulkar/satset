@@ -183,6 +183,14 @@
                     <div class="text-green-200 text-xs mt-1">Daftar hadir via WhatsApp</div>
                 </a>
 
+                <a href="<?= APP_BASE ?>/surat" target="_blank" class="card block rounded-2xl p-5
+                    bg-gradient-to-br from-amber-500 to-orange-600
+                    border border-amber-500/30">
+                    <div class="icon-wrap text-4xl mb-3">✉️</div>
+                    <div class="font-bold text-base sm:text-lg">Buku Tamu Via Surat</div>
+                    <div class="text-amber-100 text-xs mt-1">Daftar hadir via surat/permohonan data</div>
+                </a>
+
                 <button onclick="bukaModalSurvei()" class="card text-left w-full rounded-2xl p-5
                     bg-gradient-to-br from-amber-500 to-orange-600
                     border border-amber-500/30 cursor-pointer">
@@ -387,8 +395,9 @@
         umum:        'bg-blue-900/60 text-blue-300 border border-blue-700',
         disabilitas: 'bg-purple-900/60 text-purple-300 border border-purple-700',
         whatsapp:    'bg-green-900/60 text-green-300 border border-green-700',
+        surat:       'bg-amber-900/60 text-amber-300 border border-amber-700',
     };
-    const LABEL = { umum: 'Umum', disabilitas: 'Disabilitas', whatsapp: 'WhatsApp' };
+    const LABEL = { umum: 'Umum', disabilitas: 'Disabilitas', whatsapp: 'WhatsApp', surat: 'Via Surat' };
 
     function isoDate(d) { return d.toISOString().slice(0, 10); }
 

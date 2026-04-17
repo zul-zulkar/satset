@@ -7,11 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        .touch-btn { padding: .75rem 1rem; font-size: 1rem; }
-        .stat-num  { font-variant-numeric: tabular-nums; }
+        .stat-num { font-variant-numeric: tabular-nums; }
+        @media (min-width: 768px) {
+            body { height: 100dvh; overflow: hidden; }
+        }
     </style>
 </head>
-<body class="bg-gray-950 text-white min-h-screen flex flex-col p-4 md:p-6">
+<body class="bg-gray-950 text-white flex flex-col p-3 md:p-4 gap-3 md:gap-4">
 
     <?php
     include 'db.php';
@@ -23,10 +25,10 @@
     $res = $mysqli->query("SELECT nomor FROM antrian WHERE tanggal='$tanggal' AND jenis='umum' AND status='dipanggil' ORDER BY id DESC LIMIT 1");
     $nomorUmum = ($row = $res->fetch_assoc()) ? $row['nomor'] : '-';
 
-    $stmt = $mysqli->prepare("SELECT jenis, COUNT(*) AS total FROM antrian WHERE tanggal=? AND jenis IN ('disabilitas','umum','whatsapp') GROUP BY jenis");
+    $stmt = $mysqli->prepare("SELECT jenis, COUNT(*) AS total FROM antrian WHERE tanggal=? AND jenis IN ('disabilitas','umum','whatsapp','surat') GROUP BY jenis");
     $stmt->bind_param("s", $tanggal);
     $stmt->execute();
-    $totals = ['disabilitas' => 0, 'umum' => 0, 'whatsapp' => 0];
+    $totals = ['disabilitas' => 0, 'umum' => 0, 'whatsapp' => 0, 'surat' => 0];
     foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $r) {
         $totals[$r['jenis']] = (int)$r['total'];
     }
@@ -34,63 +36,71 @@
     ?>
 
     <!-- HEADER -->
-    <header class="text-center mb-6 md:mb-8">
-        <h1 class="text-4xl md:text-6xl font-bold tracking-wide">BUKU TAMU</h1>
-        <p class="text-gray-400 mt-1 text-base md:text-lg">Pelayanan Statistik Terpadu — BPS Kabupaten Buleleng</p>
-        <p class="text-gray-500 text-sm mt-1" id="tanggal-hari"></p>
+    <header class="text-center shrink-0">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide">BUKU TAMU</h1>
+        <p class="text-gray-400 text-xs sm:text-sm mt-0.5">Pelayanan Statistik Terpadu — BPS Kabupaten Buleleng</p>
+        <p class="text-gray-500 text-xs" id="tanggal-hari"></p>
     </header>
 
-    <!-- QR CODE PENDAFTARAN (atas, lebih besar) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-        <div class="bg-white text-black p-6 rounded-2xl shadow text-center">
-            <p class="font-bold text-gray-600 mb-4 uppercase tracking-widest text-xs">Daftar Antrean — Disabilitas</p>
-            <div id="qr-disabilitas" class="flex justify-center mb-4"></div>
+    <!-- MAIN GRID: 2-col, 3 explicit rows on desktop (fills screen); natural wrap on mobile -->
+    <div class="flex-1 grid grid-cols-2 gap-3 md:gap-4 md:grid-rows-3 min-h-0">
+
+        <!-- Row 1 col 1 — QR Disabilitas -->
+        <div class="bg-white text-black rounded-2xl p-3 flex flex-col items-center justify-between min-h-0">
+            <p class="font-bold text-gray-600 text-[9px] sm:text-[10px] uppercase tracking-widest shrink-0">Daftar Antrean — Disabilitas</p>
+            <div id="qr-disabilitas" class="flex justify-center my-1 flex-1 items-center min-h-0"></div>
             <a id="link-disabilitas" href="<?= APP_URL ?>/disabilitas" target="_blank" rel="noopener"
-               class="inline-block bg-blue-700 text-white touch-btn rounded-xl font-semibold w-full text-center">Buka Link Pendaftaran</a>
+               class="block bg-blue-700 text-white text-xs py-1.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
         </div>
-        <div class="bg-white text-black p-6 rounded-2xl shadow text-center">
-            <p class="font-bold text-gray-600 mb-4 uppercase tracking-widest text-xs">Daftar Antrean — Umum</p>
-            <div id="qr-umum" class="flex justify-center mb-4"></div>
-            <a id="link-umum" href="<?= APP_URL ?>/umum" target="_blank" rel="noopener"
-               class="inline-block bg-emerald-700 text-white touch-btn rounded-xl font-semibold w-full text-center">Buka Link Pendaftaran</a>
-        </div>
-    </div>
 
-    <!-- TIGA KARTU STATISTIK -->
-    <div class="grid grid-cols-3 gap-4 md:gap-6">
-
-        <!-- DISABILITAS -->
-        <div class="bg-blue-800 rounded-2xl p-4 md:p-6 text-center flex flex-col gap-2">
-            <p class="text-xs font-bold uppercase tracking-widest text-blue-300">Antrean Disabilitas</p>
-            <div class="flex-1 flex flex-col items-center justify-center">
-                <div class="stat-num text-6xl md:text-8xl font-bold leading-none" id="nomor-disabilitas"><?= htmlspecialchars($nomorDisabilitas) ?></div>
-                <p class="text-sm md:text-base text-blue-200 mt-2">sedang dipanggil</p>
+        <!-- Row 1 col 2 — Nomor Disabilitas -->
+        <div class="bg-blue-800 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
+            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-blue-300 shrink-0">Antrean Disabilitas</p>
+            <div class="flex-1 flex flex-col items-center justify-center min-h-0">
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="nomor-disabilitas"><?= htmlspecialchars($nomorDisabilitas) ?></div>
+                <p class="text-xs text-blue-200 mt-1">sedang dipanggil</p>
             </div>
-            <p class="text-xs text-blue-300 mt-1">
+            <p class="text-[9px] sm:text-xs text-blue-300 text-center shrink-0">
                 <span class="font-semibold" id="total-disabilitas"><?= $totals['disabilitas'] ?></span> orang mendaftar hari ini
             </p>
         </div>
 
-        <!-- UMUM -->
-        <div class="bg-emerald-800 rounded-2xl p-4 md:p-6 text-center flex flex-col gap-2">
-            <p class="text-xs font-bold uppercase tracking-widest text-emerald-300">Antrean Umum</p>
-            <div class="flex-1 flex flex-col items-center justify-center">
-                <div class="stat-num text-6xl md:text-8xl font-bold leading-none" id="nomor-umum"><?= htmlspecialchars($nomorUmum) ?></div>
-                <p class="text-sm md:text-base text-emerald-200 mt-2">sedang dipanggil</p>
+        <!-- Row 2 col 1 — QR Umum -->
+        <div class="bg-white text-black rounded-2xl p-3 flex flex-col items-center justify-between min-h-0">
+            <p class="font-bold text-gray-600 text-[9px] sm:text-[10px] uppercase tracking-widest shrink-0">Daftar Antrean — Umum</p>
+            <div id="qr-umum" class="flex justify-center my-1 flex-1 items-center min-h-0"></div>
+            <a id="link-umum" href="<?= APP_URL ?>/umum" target="_blank" rel="noopener"
+               class="block bg-emerald-700 text-white text-xs py-1.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
+        </div>
+
+        <!-- Row 2 col 2 — Nomor Umum -->
+        <div class="bg-emerald-800 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
+            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-emerald-300 shrink-0">Antrean Umum</p>
+            <div class="flex-1 flex flex-col items-center justify-center min-h-0">
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="nomor-umum"><?= htmlspecialchars($nomorUmum) ?></div>
+                <p class="text-xs text-emerald-200 mt-1">sedang dipanggil</p>
             </div>
-            <p class="text-xs text-emerald-300 mt-1">
+            <p class="text-[9px] sm:text-xs text-emerald-300 text-center shrink-0">
                 <span class="font-semibold" id="total-umum"><?= $totals['umum'] ?></span> orang mendaftar hari ini
             </p>
         </div>
 
-        <!-- WHATSAPP -->
-        <div class="bg-green-700 rounded-2xl p-4 md:p-6 text-center flex flex-col gap-2">
-            <p class="text-xs font-bold uppercase tracking-widest text-green-200">WhatsApp</p>
-            <div class="flex-1 flex flex-col items-center justify-center">
-                <div class="stat-num text-6xl md:text-8xl font-bold leading-none" id="count-whatsapp"><?= $totals['whatsapp'] ?></div>
-                <p class="text-sm md:text-base text-green-200 mt-2">orang mendaftar hari ini</p>
+        <!-- Row 3 col 1 — WhatsApp -->
+        <div class="bg-green-700 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
+            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-green-200 shrink-0">Via WhatsApp</p>
+            <div class="flex-1 flex items-center justify-center min-h-0">
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="count-whatsapp"><?= $totals['whatsapp'] ?></div>
             </div>
-            <p class="text-xs text-green-300 mt-1">via WhatsApp</p>
+            <p class="text-[9px] sm:text-xs text-green-300 text-center shrink-0">orang mendaftar hari ini</p>
+        </div>
+
+        <!-- Row 3 col 2 — Surat -->
+        <div class="bg-amber-700 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
+            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-amber-200 shrink-0">Via Surat</p>
+            <div class="flex-1 flex items-center justify-center min-h-0">
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="count-surat"><?= $totals['surat'] ?></div>
+            </div>
+            <p class="text-[9px] sm:text-xs text-amber-300 text-center shrink-0">orang mendaftar hari ini</p>
         </div>
 
     </div>
@@ -113,8 +123,8 @@
 
         // ── QR Codes ─────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', function() {
-            // QR lebih besar: 300px desktop, 200px mobile
-            const qrSize = window.innerWidth < 768 ? 200 : 300;
+            const isMd   = window.innerWidth >= 768;
+            const qrSize = isMd ? 130 : 100;
 
             new QRCode(document.getElementById('qr-disabilitas'), {
                 text: QR_URLS.disabilitas, width: qrSize, height: qrSize,
@@ -242,19 +252,22 @@
                     const d = data.disabilitas ?? 0;
                     const u = data.umum        ?? 0;
                     const w = data.whatsapp    ?? 0;
+                    const s = data.surat       ?? 0;
                     const elDis = document.getElementById('total-disabilitas');
                     const elUmm = document.getElementById('total-umum');
                     const elWa  = document.getElementById('count-whatsapp');
+                    const elSur = document.getElementById('count-surat');
                     if (elDis) elDis.textContent = d;
                     if (elUmm) elUmm.textContent = u;
                     if (elWa)  elWa.textContent  = w;
+                    if (elSur) elSur.textContent = s;
                 }).catch(() => {});
         }
         setInterval(refreshStats, 15000);
     </script>
 
     <!-- ── Pilih Suara (tersembunyi) ── -->
-    <div class="mt-6 bg-white text-black p-4 rounded shadow hidden">
+    <div class="shrink-0 bg-white text-black p-4 rounded shadow hidden">
         <label class="block font-semibold mb-2 text-gray-800">Pilih Suara (jika tersedia)</label>
         <div class="flex items-center gap-2">
             <select id="voiceSelect" class="border p-2 rounded flex-1 text-gray-800"></select>

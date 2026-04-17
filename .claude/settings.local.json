@@ -14,7 +14,8 @@
       "Bash(php -l c:/xampp/htdocs/satset/absensi/action/save_config.php)",
       "Bash(php -l c:/xampp/htdocs/satset/absensi/index.php)",
       "Bash(grep -n -A 15 \"CREATE TABLE IF NOT EXISTS \\\\`pes\\\\`\" c:/xampp/htdocs/satset/sql_production/migrasi_production.sql)",
-      "Bash(php -l \"c:/xampp/htdocs/satset/absensi/action/save_jadwal.php\")"
+      "Bash(php -l \"c:/xampp/htdocs/satset/absensi/action/save_jadwal.php\")",
+      "Bash(xargs grep *)"
     ]
   }
 }

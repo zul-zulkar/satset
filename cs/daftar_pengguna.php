@@ -4,7 +4,7 @@ include '../db.php';
 $bulan = $_GET['bulan'] ?? date('m');
 $tahun = $_GET['tahun'] ?? date('Y');
 
-// Tab 1: Semua tamu (umum + disabilitas + whatsapp)
+// Tab 1: Semua tamu (umum + disabilitas + whatsapp + surat)
 $stmt1 = $mysqli->prepare(
     "SELECT a.*
      FROM antrian a
@@ -21,7 +21,7 @@ $stmt2 = $mysqli->prepare(
             (SELECT id FROM penilaian WHERE antrian_id = a.id LIMIT 1) AS penilaian_id,
             (SELECT id FROM pes       WHERE antrian_id = a.id LIMIT 1) AS pes_id
      FROM antrian a
-     WHERE (a.jenis = 'whatsapp' OR (a.jenis IN ('umum','disabilitas') AND a.kunjungan_pst = 1))
+     WHERE (a.jenis IN ('whatsapp','surat') OR (a.jenis IN ('umum','disabilitas') AND a.kunjungan_pst = 1))
        AND MONTH(a.tanggal) = ? AND YEAR(a.tanggal) = ?
      ORDER BY a.tanggal DESC, a.id DESC"
 );
@@ -30,9 +30,10 @@ $stmt2->execute();
 $resPST = $stmt2->get_result();
 
 $jenisMeta = [
-    'umum'        => ['border' => 'border-l-4 border-l-blue-500',   'badge' => 'bg-blue-100 text-blue-800 border-blue-200',     'icon' => 'fa-solid fa-user',       'label' => 'Umum'],
-    'disabilitas' => ['border' => 'border-l-4 border-l-purple-500', 'badge' => 'bg-purple-100 text-purple-800 border-purple-200','icon' => 'fa-solid fa-wheelchair',  'label' => 'Disabilitas'],
-    'whatsapp'    => ['border' => 'border-l-4 border-l-green-500',  'badge' => 'bg-green-100 text-green-800 border-green-200',   'icon' => 'fa-brands fa-whatsapp',  'label' => 'WhatsApp'],
+    'umum'        => ['border' => 'border-l-4 border-l-blue-500',   'badge' => 'bg-blue-100 text-blue-800 border-blue-200',     'icon' => 'fa-solid fa-user',         'label' => 'Umum'],
+    'disabilitas' => ['border' => 'border-l-4 border-l-purple-500', 'badge' => 'bg-purple-100 text-purple-800 border-purple-200','icon' => 'fa-solid fa-wheelchair',   'label' => 'Disabilitas'],
+    'whatsapp'    => ['border' => 'border-l-4 border-l-green-500',  'badge' => 'bg-green-100 text-green-800 border-green-200',   'icon' => 'fa-brands fa-whatsapp',    'label' => 'WhatsApp'],
+    'surat'       => ['border' => 'border-l-4 border-l-amber-500',  'badge' => 'bg-amber-100 text-amber-800 border-amber-200',   'icon' => 'fa-solid fa-envelope',     'label' => 'Via Surat'],
 ];
 ?>
 <!DOCTYPE html>
@@ -44,6 +45,8 @@ $jenisMeta = [
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <!-- safelist amber classes agar Tailwind CDN tidak prune -->
+    <div class="hidden bg-amber-100 text-amber-800 border-amber-200 border-l-4 border-l-amber-500"></div>
     <style>
         .score-1,.score-2  { background:#fee2e2;color:#dc2626; }
         .score-3,.score-4  { background:#ffedd5;color:#ea580c; }
@@ -136,11 +139,11 @@ $jenisMeta = [
             <tbody>
             <?php while ($row = $resTamu->fetch_assoc()):
                 $jenis        = $row['jenis'] ?? '';
-                $isWa         = $jenis === 'whatsapp';
+                $isPstJenis   = in_array($jenis, ['whatsapp', 'surat']);
                 $meta         = $jenisMeta[$jenis] ?? ['border' => '', 'badge' => 'bg-gray-100 text-gray-700 border-gray-200', 'icon' => '', 'label' => htmlspecialchars($jenis)];
-                $jumlah       = $isWa ? 1 : ($row['jumlah_orang'] ?? 1);
-                $keperluan    = $isWa ? 'Permintaan Data' : ($row['keperluan'] ?? '-');
-                $isPST        = $isWa || !empty($row['kunjungan_pst']);
+                $jumlah       = $isPstJenis ? 1 : ($row['jumlah_orang'] ?? 1);
+                $keperluan    = $isPstJenis ? 'Permintaan Data' : ($row['keperluan'] ?? '-');
+                $isPST        = $isPstJenis || !empty($row['kunjungan_pst']);
             ?>
             <tr class="expandable-row <?= $meta['border'] ?>"
                 data-id="<?= $row['id'] ?>"
@@ -684,28 +687,32 @@ function buildExpandDetail(tr, pData, isPST) {
         );
     }
 
-    // ── PES link card ─────────────────────────────────────────────────────────
+    var hasPes = parseInt(tr.attr('data-pes-id') || 0) > 0;
+
+    // ── PES link card (sembunyikan jika PES sudah terisi) ─────────────────────
     var pesLinkHtml = '';
-    if (tokenPes) {
-        var pesUrl = APP_URL + '/pes/?token=' + tokenPes;
-        pesLinkHtml = linkCard(
-            'fas fa-clipboard-list text-teal-600',
-            'Form PES',
-            'bg-teal-50 border-teal-200 text-teal-800',
-            pesUrl, id, 'pes'
-        );
-    } else {
-        pesLinkHtml =
-            "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-teal-50 border-teal-200' id='pes-link-container-" + id + "'>" +
-              "<div class='flex items-center gap-2'>" +
-                "<i class='fas fa-clipboard-list text-teal-600 flex-shrink-0'></i>" +
-                "<span class='font-semibold text-xs text-teal-800'>Form PES</span>" +
-                "<span class='text-xs text-teal-600 italic'>(link belum dibuat)</span>" +
-              "</div>" +
-              "<button onclick='generateTokenPes(" + id + ", this)' " +
-                "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors whitespace-nowrap'>" +
-                "<i class='fas fa-link'></i><span class='ml-1'>Buat Link</span></button>" +
-            "</div>";
+    if (!hasPes) {
+        if (tokenPes) {
+            var pesUrl = APP_URL + '/pes/?token=' + tokenPes;
+            pesLinkHtml = linkCard(
+                'fas fa-clipboard-list text-teal-600',
+                'Form PES',
+                'bg-teal-50 border-teal-200 text-teal-800',
+                pesUrl, id, 'pes'
+            );
+        } else {
+            pesLinkHtml =
+                "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-teal-50 border-teal-200' id='pes-link-container-" + id + "'>" +
+                  "<div class='flex items-center gap-2'>" +
+                    "<i class='fas fa-clipboard-list text-teal-600 flex-shrink-0'></i>" +
+                    "<span class='font-semibold text-xs text-teal-800'>Form PES</span>" +
+                    "<span class='text-xs text-teal-600 italic'>(link belum dibuat)</span>" +
+                  "</div>" +
+                  "<button onclick='generateTokenPes(" + id + ", this)' " +
+                    "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors whitespace-nowrap'>" +
+                    "<i class='fas fa-link'></i><span class='ml-1'>Buat Link</span></button>" +
+                "</div>";
+        }
     }
 
     var penilaianBtn = hasPenilaian
@@ -713,6 +720,16 @@ function buildExpandDetail(tr, pData, isPST) {
           "class='inline-flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
           "<i class='fas fa-star'></i>Lihat Penilaian</button>"
         : '';
+
+    var pesViewBtn = hasPes
+        ? "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?id=" + id + "#section-pes' target='_blank' " +
+          "class='inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+          "<i class='fas fa-clipboard-check'></i> Lihat PES</a>"
+        : '';
+
+    var detailBtn = "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?id=" + id + "' target='_blank' " +
+        "class='inline-flex items-center gap-1.5 bg-slate-500 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+        "<i class='fas fa-file-lines'></i> Detail Lengkap</a>";
 
     return "<div class='bg-gray-50 border-t border-gray-200 p-3 sm:p-4 expand-detail text-sm' style='display:none;'>" +
         "<div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 mb-3'>" +
@@ -732,6 +749,8 @@ function buildExpandDetail(tr, pData, isPST) {
           "<button class='inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' onclick='deleteUser(" + id + ")'>" +
             "<i class='fas fa-trash-alt'></i>Hapus</button>" +
           penilaianBtn +
+          pesViewBtn +
+          detailBtn +
         "</div></div>";
 }
 
@@ -1022,7 +1041,7 @@ function removeEditRecord(btn) {
 
 function openEditModal(tr) {
     var jenis    = tr.data('jenis') || '';
-    var isWa     = jenis === 'whatsapp';
+    var isWa     = jenis === 'whatsapp' || jenis === 'surat';
     var isPST    = isWa || parseInt(tr.data('kunjungan-pst') || 0) === 1;
     var isLangsung = jenis === 'umum' || jenis === 'disabilitas';
 

@@ -14,7 +14,7 @@ $stmt = $mysqli->prepare(
     "SELECT jenis, COUNT(*) AS total
      FROM antrian
      WHERE tanggal = ?
-       AND jenis IN ('disabilitas','umum','whatsapp')
+       AND jenis IN ('disabilitas','umum','whatsapp','surat')
      GROUP BY jenis"
 );
 $stmt->bind_param("s", $tanggal);
@@ -22,7 +22,7 @@ $stmt->execute();
 $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-$out = ['disabilitas' => 0, 'umum' => 0, 'whatsapp' => 0];
+$out = ['disabilitas' => 0, 'umum' => 0, 'whatsapp' => 0, 'surat' => 0];
 foreach ($rows as $r) {
     $out[$r['jenis']] = (int)$r['total'];
 }
