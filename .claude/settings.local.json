@@ -15,7 +15,13 @@
       "Bash(php -l c:/xampp/htdocs/satset/absensi/index.php)",
       "Bash(grep -n -A 15 \"CREATE TABLE IF NOT EXISTS \\\\`pes\\\\`\" c:/xampp/htdocs/satset/sql_production/migrasi_production.sql)",
       "Bash(php -l \"c:/xampp/htdocs/satset/absensi/action/save_jadwal.php\")",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(unzip -l kop_bps.docx)",
+      "Bash(unzip -p kop_bps.docx word/document.xml)",
+      "Bash(python3 -c \"import sys,xml.dom.minidom; print\\(xml.dom.minidom.parseString\\(sys.stdin.read\\(\\)\\).toprettyxml\\(indent=' '\\)\\)\")",
+      "Bash(unzip -p kop_bps.docx word/_rels/document.xml.rels)",
+      "Bash(grep -v '^$')",
+      "Bash(php -r ' *)"
     ]
   }
 }

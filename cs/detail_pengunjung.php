@@ -130,9 +130,11 @@ $tanggal = $antrian['tanggal'] ?? '';
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            body { background: white !important; padding: 0 !important; margin: 0 !important; min-height: 0 !important; }
             .print-card { box-shadow: none !important; border: 1px solid #e5e7eb !important; break-inside: avoid; }
-            .print-header { margin-bottom: 1.5rem; }
+            .print-header { margin-bottom: 0.3rem; }
+            .content-wrapper { padding-top: 0 !important; padding-bottom: 0 !important; }
+            .content-wrapper > * { margin-top: 0.3rem !important; }
 
             /* Paksa tabel desktop tampil saat cetak */
             #section-data div.sm\:hidden { display: none !important; }
@@ -152,8 +154,11 @@ $tanggal = $antrian['tanggal'] ?? '';
             body.pdf1 #section-data { display: none !important; }
             body.pdf1 .field-email { display: none !important; }
             body.pdf1 .field-telepon { display: none !important; }
+            body.pdf1 .field-nip { display: none !important; }
+            body.pdf1 #section-catatan { display: none !important; }
             body.pdf1 .print-title-pdf2 { display: none !important; }
             body.pdf1 .print-title-pdf1 { display: block !important; }
+            body.pdf1 .print-card { padding: 0.5rem 0.75rem !important; margin-bottom: 0.3rem !important; }
 
             /* PDF 2 — Tindak Lanjut */
             body.pdf2 #section-identitas {
@@ -166,11 +171,20 @@ $tanggal = $antrian['tanggal'] ?? '';
                 padding: 0 !important;
                 border: none !important;
             }
-            body.pdf2 .content-wrapper { padding-top: 0 !important; }
             body.pdf2 .print-title-pdf1 { display: none !important; }
             body.pdf2 .print-title-pdf2 { display: block !important; }
+            body.pdf2 #section-penilaian { margin-top: 0 !important; }
+            body.pdf2 #section-penilaian .print-card { padding: 0.35rem 0.6rem !important; break-inside: avoid; }
+            body.pdf2 #section-penilaian .print-card > div:first-child { margin-bottom: 0.25rem !important; }
+            body.pdf2 #section-penilaian .rounded-lg > div { padding-top: 0.28rem !important; padding-bottom: 0.28rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+            body.pdf2 #section-penilaian .rounded-lg { margin-bottom: 0 !important; }
+            body.pdf2 #section-penilaian p.text-xs { font-size: 0.72rem !important; line-height: 1.35 !important; }
+            body.pdf2 #section-penilaian .w-6 { width: 1.1rem !important; height: 1.1rem !important; min-width: 1.1rem !important; font-size: 0.6rem !important; }
+            /* Izinkan section-data pecah lintas halaman */
+            body.pdf2 #section-data.print-card { break-inside: auto !important; }
+            body.pdf2 #section-data > div { break-inside: auto !important; }
         }
-        @page { margin: 1.5cm; }
+        @page { margin: 0.8cm 1.5cm 1.5cm 1.5cm; }
         .print-only { display: none; }
         .score-badge {
             display: inline-block;
@@ -185,15 +199,13 @@ $tanggal = $antrian['tanggal'] ?? '';
 
 <!-- ── Print Header (only visible when printing) ────────────────────────────── -->
 <div class="print-only print-header px-0">
-    <div style="border-bottom:2px solid #1e40af;padding-bottom:0.75rem;margin-bottom:1rem;">
-        <p style="font-size:0.75rem;color:#6b7280;margin:0;">BPS Kabupaten Buleleng</p>
-        <h2 class="print-title-pdf1" style="display:none;font-size:1.1rem;font-weight:700;color:#1e3a8a;margin:0.25rem 0 0;">
-            DAFTAR KEBUTUHAN DATA PENGUNJUNG PST
-        </h2>
-        <h2 class="print-title-pdf2" style="display:none;font-size:1.1rem;font-weight:700;color:#1e3a8a;margin:0.25rem 0 0;">
-            TINDAK LANJUT PELAYANAN PENGUNJUNG PST
-        </h2>
-    </div>
+    <?php include '../templat/kop_html.php'; ?>
+    <h2 class="print-title-pdf1" style="display:none;font-size:11pt;font-weight:bold;color:#000;text-align:center;margin:1rem 0 0.2rem;">
+        DAFTAR KEBUTUHAN DATA PENGUNJUNG PST
+    </h2>
+    <h2 class="print-title-pdf2" style="display:none;font-size:11pt;font-weight:bold;color:#000;text-align:center;margin:1rem 0 0.2rem;">
+        TINDAK LANJUT PELAYANAN PENGUNJUNG PST
+    </h2>
 </div>
 
 <!-- ── Screen Header ─────────────────────────────────────────────────────────── -->
@@ -310,7 +322,7 @@ $tanggal = $antrian['tanggal'] ?? '';
                 <dd class="font-semibold text-gray-800">
                     <?= h($pes['petugas_nama'] ?? '—') ?>
                     <?php if ($pes['petugas_nip']): ?>
-                    <span class="block text-xs font-normal text-gray-500">NIP <?= h($pes['petugas_nip']) ?></span>
+                    <span class="field-nip block text-xs font-normal text-gray-500">NIP <?= h($pes['petugas_nip']) ?></span>
                     <?php endif; ?>
                 </dd>
             </div>
@@ -322,13 +334,36 @@ $tanggal = $antrian['tanggal'] ?? '';
                     <div class="font-semibold text-gray-800">
                         <?= h($pmb['nama']) ?>
                         <?php if ($pmb['nip']): ?>
-                        <span class="block text-xs font-normal text-gray-500">NIP <?= h($pmb['nip']) ?></span>
+                        <span class="field-nip block text-xs font-normal text-gray-500">NIP <?= h($pmb['nip']) ?></span>
                         <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 </dd>
             </div>
             <?php endif; ?>
+            <?php endif; ?>
+            <?php if ($jenis === 'surat'): ?>
+            <div class="sm:col-span-2">
+                <dt class="text-gray-500 text-xs mb-0.5">Link Surat Masuk</dt>
+                <dd id="link-surat-display" class="flex items-center gap-2 font-semibold text-gray-800">
+                    <?php if (!empty($antrian['link_surat'])): ?>
+                        <a href="<?= h($antrian['link_surat']) ?>" target="_blank" rel="noopener" class="text-blue-600 underline break-all text-sm"><?= h($antrian['link_surat']) ?></a>
+                    <?php else: ?>
+                        <span class="text-gray-400 italic font-normal text-sm">Belum diisi</span>
+                    <?php endif; ?>
+                    <button onclick="editLinkSurat()" class="no-print shrink-0 text-xs text-blue-500 hover:text-blue-700 underline">Edit</button>
+                </dd>
+                <dd id="link-surat-edit" class="hidden mt-1">
+                    <div class="flex gap-2 items-center">
+                        <input type="url" id="link-surat-input" value="<?= h($antrian['link_surat'] ?? '') ?>"
+                               placeholder="https://drive.google.com/..."
+                               class="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+                        <button onclick="saveLinkSurat()" class="no-print shrink-0 bg-blue-600 text-white text-xs px-3 py-1.5 rounded hover:bg-blue-700 transition-colors">Simpan</button>
+                        <button onclick="cancelLinkSurat()" class="no-print shrink-0 text-gray-500 text-xs px-2 py-1.5 hover:underline">Batal</button>
+                    </div>
+                    <p id="link-surat-err" class="hidden text-red-500 text-xs mt-1"></p>
+                </dd>
+            </div>
             <?php endif; ?>
         </dl>
         <?php if ($pes && (!empty($jenisLayanan) || !empty($sarana))): ?>
@@ -423,14 +458,6 @@ $tanggal = $antrian['tanggal'] ?? '';
             <?php endfor; ?>
         </div>
 
-        <?php if (!empty($penilaian['catatan']) && trim($penilaian['catatan'])): ?>
-        <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Catatan &amp; Saran</p>
-            <div class="bg-purple-50 border border-purple-100 rounded-lg px-4 py-3 text-sm text-gray-700 leading-relaxed">
-                <?= nl2br(h($penilaian['catatan'])) ?>
-            </div>
-        </div>
-        <?php endif; ?>
     </div>
     <?php else: ?>
     <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-5 text-center text-sm text-gray-400">
@@ -452,6 +479,10 @@ $tanggal = $antrian['tanggal'] ?? '';
 
     <?php if (!empty($combinedItems)): ?>
     <div class="bg-white rounded-xl shadow-sm border border-emerald-200 print-card overflow-hidden">
+        <!-- Subjudul tabel — hanya muncul saat cetak -->
+        <div class="print-only px-3 pt-3 pb-1">
+            <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#065f46;border-bottom:1px solid #d1fae5;padding-bottom:0.35rem;">Rincian Kebutuhan Data</p>
+        </div>
         <!-- Mobile: card per item -->
         <div class="sm:hidden divide-y divide-gray-100">
             <?php foreach ($combinedItems as $i => $ci): ?>
@@ -483,10 +514,6 @@ $tanggal = $antrian['tanggal'] ?? '';
                     <dt class="text-gray-500 col-sumber">Judul Sumber</dt>
                     <dd class="font-medium col-sumber"><?= h($ci['judul_sumber']) ?></dd>
                     <?php endif; ?>
-                    <?php if ($ci['tahun_sumber']): ?>
-                    <dt class="text-gray-500 col-sumber">Tahun Sumber</dt>
-                    <dd class="font-medium col-sumber"><?= h($ci['tahun_sumber']) ?></dd>
-                    <?php endif; ?>
                 </dl>
             </div>
             <?php endforeach; ?>
@@ -504,8 +531,7 @@ $tanggal = $antrian['tanggal'] ?? '';
                         <th class="px-3 py-2.5 text-center font-semibold th-perolehan whitespace-nowrap">Status Perolehan</th>
                         <th class="px-3 py-2.5 text-center font-semibold th-perencanaan">Perencanaan</th>
                         <th class="px-3 py-2.5 text-center font-semibold th-sumber whitespace-nowrap">Jenis Sumber</th>
-                        <th class="px-3 py-2.5 text-left font-semibold th-sumber">Judul Sumber Data</th>
-                        <th class="px-3 py-2.5 text-center font-semibold th-sumber whitespace-nowrap">Tahun Sumber</th>
+                        <th class="px-3 py-2.5 text-left font-semibold th-sumber w-1/3">Judul Sumber Data</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -522,7 +548,6 @@ $tanggal = $antrian['tanggal'] ?? '';
                         <td class="px-3 py-2.5 text-center col-perencanaan"><?= h($ci['untuk_perencanaan'] ?: '—') ?></td>
                         <td class="px-3 py-2.5 text-center col-sumber"><?= h($ci['jenis_sumber'] ?: '—') ?></td>
                         <td class="px-3 py-2.5 col-sumber"><?= h($ci['judul_sumber'] ?: '—') ?></td>
-                        <td class="px-3 py-2.5 text-center col-sumber"><?= h($ci['tahun_sumber'] ?: '—') ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -537,6 +562,16 @@ $tanggal = $antrian['tanggal'] ?? '';
     <?php endif; ?>
 </div>
 
+<!-- ── Catatan & Saran (setelah tabel rincian data) ───────────────────────────── -->
+<?php if ($penilaian && !empty($penilaian['catatan']) && trim($penilaian['catatan'])): ?>
+<div id="section-catatan" class="bg-white rounded-xl shadow-sm border border-purple-200 p-5 print-card">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Catatan &amp; Saran</p>
+    <div class="bg-purple-50 border border-purple-100 rounded-lg px-4 py-3 text-sm text-gray-700 leading-relaxed">
+        <?= nl2br(h($penilaian['catatan'])) ?>
+    </div>
+</div>
+<?php endif; ?>
+
 </div><!-- /max-w-4xl -->
 
 <!-- ── PDF Export Modal / Toast ──────────────────────────────────────────────── -->
@@ -548,11 +583,9 @@ $tanggal = $antrian['tanggal'] ?? '';
 function cetakPDF(mode) {
     var toast = document.getElementById('pdf-toast');
     toast.classList.remove('hidden');
-    document.body.className = document.body.className.replace(/\bpdf\d\b/g, '').trim();
-    document.body.classList.add('pdf' + mode);
 
-    // Untuk PDF2: cabut section-identitas dari DOM agar Chrome tidak membuat
-    // halaman kosong akibat break-inside:avoid pada elemen tersembunyi.
+    // Cabut section-identitas SEBELUM menambah body class agar Chrome tidak
+    // pernah melihat elemen dengan break-inside:avoid dalam state tersembunyi.
     var detached = null, detachedParent = null, detachedNext = null;
     if (mode === 2) {
         var el = document.getElementById('section-identitas');
@@ -563,6 +596,9 @@ function cetakPDF(mode) {
             detached = el;
         }
     }
+
+    document.body.className = document.body.className.replace(/\bpdf\d\b/g, '').trim();
+    document.body.classList.add('pdf' + mode);
 
     setTimeout(function() {
         toast.classList.add('hidden');
@@ -575,8 +611,52 @@ function cetakPDF(mode) {
                     : detachedParent.appendChild(detached);
             }
         }, 500);
-    }, 200);
+    }, 400);
 }
 </script>
+<?php if ($jenis === 'surat'): ?>
+<script>
+const _APP_BASE = '<?= APP_BASE ?>';
+function editLinkSurat() {
+    document.getElementById('link-surat-display').classList.add('hidden');
+    document.getElementById('link-surat-edit').classList.remove('hidden');
+    document.getElementById('link-surat-input').focus();
+}
+function cancelLinkSurat() {
+    document.getElementById('link-surat-display').classList.remove('hidden');
+    document.getElementById('link-surat-edit').classList.add('hidden');
+    document.getElementById('link-surat-err').classList.add('hidden');
+}
+function saveLinkSurat() {
+    var link = document.getElementById('link-surat-input').value.trim();
+    var err  = document.getElementById('link-surat-err');
+    err.classList.add('hidden');
+    if (link && !/^https?:\/\/.+/.test(link)) {
+        err.textContent = 'URL harus diawali dengan http:// atau https://';
+        err.classList.remove('hidden');
+        return;
+    }
+    fetch(_APP_BASE + '/action/save_link_surat.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'id=<?= $id ?>&link=' + encodeURIComponent(link)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (data.ok) {
+            var display = document.getElementById('link-surat-display');
+            var html = link
+                ? '<a href="' + link.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" class="text-blue-600 underline break-all text-sm">' + link.replace(/</g,'&lt;') + '</a>'
+                : '<span class="text-gray-400 italic font-normal text-sm">Belum diisi</span>';
+            display.innerHTML = html + ' <button onclick="editLinkSurat()" class="no-print shrink-0 text-xs text-blue-500 hover:text-blue-700 underline">Edit</button>';
+            cancelLinkSurat();
+        } else {
+            err.textContent = data.msg || 'Gagal menyimpan.';
+            err.classList.remove('hidden');
+        }
+    });
+}
+</script>
+<?php endif; ?>
 </body>
 </html>

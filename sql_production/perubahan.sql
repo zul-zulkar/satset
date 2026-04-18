@@ -164,6 +164,11 @@ ALTER TABLE `penilaian_data_item`
 ALTER TABLE `antrian`
   MODIFY COLUMN `jenis` ENUM('umum','disabilitas','whatsapp','surat');
 
+-- Tambah kolom link surat masuk
+-- (lewati jika sudah ada kolom link_surat — error "Duplicate column name" aman diabaikan)
+ALTER TABLE `antrian`
+  ADD COLUMN `link_surat` VARCHAR(500) NULL;
+
 
 -- ─────────────────────────────────────────────────────────────────────────────
 --  BAGIAN 2b: TABEL PES_KEBUTUHAN_DATA (baru — selalu aman dijalankan)
