@@ -30,6 +30,8 @@ $kelompok_umur = trim($_POST['kelompok_umur']    ?? '') ?: null;
 $pekerjaan     = trim($_POST['pekerjaan']        ?? '') ?: null;
 $pemanfaatan   = trim($_POST['pemanfaatan_data'] ?? '') ?: null;
 $data_dibutuhkan = trim($_POST['data_dibutuhkan'] ?? '') ?: null;
+$link_surat         = trim($_POST['link_surat']         ?? '') ?: null;
+$link_surat_balasan = trim($_POST['link_surat_balasan'] ?? '') ?: null;
 
 if (empty($nama)) {
     http_response_code(400);
@@ -47,23 +49,42 @@ $stmt = $mysqli->prepare(
         nama=?, email=?, telepon=?, instansi=?, jk=?, tanggal=?,
         jumlah_orang=?, keperluan=?, kunjungan_pst=?,
         pendidikan=?, kelompok_umur=?, pekerjaan=?,
-        pemanfaatan_data=?, data_dibutuhkan=?
+        pemanfaatan_data=?, data_dibutuhkan=?, link_surat=?
      WHERE id=?"
 );
-// s×6, i, s, i, s×5, i  → 15 params
+// s×6, i, s, i, s×6, i  → 16 params
 $stmt->bind_param(
-    "ssssssisisssssi",
+    "ssssssisissssssi",
     $nama, $email, $telepon, $instansi, $jk, $tanggal,
     $jumlah_orang, $keperluan, $kunjungan_pst,
     $pendidikan, $kelompok_umur, $pekerjaan,
-    $pemanfaatan, $data_dibutuhkan,
+    $pemanfaatan, $data_dibutuhkan, $link_surat,
     $id
 );
 
-if ($stmt->execute()) {
-    echo json_encode(['success' => true]);
-} else {
+if (!$stmt->execute()) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Gagal menyimpan: ' . $stmt->error]);
+    $stmt->close();
+    exit;
 }
 $stmt->close();
+
+// Simpan link_surat_balasan ke tabel pes — INSERT jika belum ada, UPDATE jika sudah ada
+$chk = $mysqli->prepare("SELECT id FROM pes WHERE antrian_id=? LIMIT 1");
+$chk->bind_param("i", $id);
+$chk->execute();
+$chk->store_result();
+if ($chk->num_rows > 0) {
+    $chk->close();
+    $stmt2 = $mysqli->prepare("UPDATE pes SET link_surat_balasan=? WHERE antrian_id=?");
+    $stmt2->bind_param("si", $link_surat_balasan, $id);
+} else {
+    $chk->close();
+    $stmt2 = $mysqli->prepare("INSERT INTO pes (antrian_id, link_surat_balasan) VALUES (?,?)");
+    $stmt2->bind_param("is", $id, $link_surat_balasan);
+}
+$stmt2->execute();
+$stmt2->close();
+
+echo json_encode(['success' => true]);

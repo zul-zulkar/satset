@@ -37,8 +37,8 @@ function renderFormWhatsapp($judul) {
             $errorMsg = "Nama hanya boleh berisi huruf, spasi, dan tanda petik satu (').";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errorMsg = 'Format email tidak valid.';
-        } elseif (!preg_match('/^(\+62|08)\d{7,13}$/', $telepon)) {
-            $errorMsg = 'Nomor HP tidak valid. Awali dengan 08 atau +62.';
+        } elseif (!preg_match('/^(\+62|0)\d{6,13}$/', $telepon)) {
+            $errorMsg = 'Nomor telepon tidak valid. Awali dengan 08, 0362 (kantor), atau +62.';
         } elseif (!in_array($jk, $validJk)) {
             $errorMsg = 'Pilih jenis kelamin.';
         } elseif (!in_array($pendidikan, $validPendidikan)) {
@@ -150,7 +150,7 @@ function renderFormWhatsapp($judul) {
                 <!-- 3. Nomor HP -->
                 <div>
                     <label class="block mb-1 font-semibold">Nomor HP <span class="text-red-500">*</span></label>
-                    <input name="telepon" required placeholder="08xxxxxxxxxx"
+                    <input name="telepon" required placeholder="08xx / 0362xxxxxx"
                            value="<?= htmlspecialchars($old['telepon'] ?? '') ?>"
                            class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-green-500">
                 </div>
@@ -395,8 +395,8 @@ function renderFormWhatsapp($judul) {
 
                 // Telepon
                 var telepon = document.querySelector('input[name="telepon"]').value.trim();
-                if (!/^(\+62|08)\d{7,13}$/.test(telepon)) {
-                    alert('Nomor HP tidak valid. Awali dengan 08 atau +62, minimal 9 digit.');
+                if (!/^(\+62|0)\d{6,13}$/.test(telepon)) {
+                    alert('Nomor telepon tidak valid. Awali dengan 08, 0362 (kantor), atau +62.');
                     e.preventDefault(); return;
                 }
 

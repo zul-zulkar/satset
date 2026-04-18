@@ -145,6 +145,7 @@ function renderFormPes($token) {
         $old['sarana_lainnya']            = $existingPes['sarana_lainnya'] ?? '';
         $old['pembantu']                  = $existingPembantu;
         $old['sentimen_kritik_saran']     = $existingPes['sentimen_kritik_saran'] ?? '';
+        $old['link_surat_balasan']        = $existingPes['link_surat_balasan']   ?? '';
         $old['jenis_sumber_data']         = array_column($existingKebutuhanData, 'jenis_sumber_data');
         $old['judul_sumber_data']         = array_column($existingKebutuhanData, 'judul_sumber_data');
         $old['tahun_sumber_data']         = array_column($existingKebutuhanData, 'tahun_sumber_data');
@@ -173,6 +174,7 @@ function renderFormPes($token) {
         $saranaLain           = trim($_POST['sarana_lainnya'] ?? '');
         $pembantuIds          = $old['pembantu'];
         $sentimenKritikSaran  = trim($_POST['sentimen_kritik_saran'] ?? '') ?: null;
+        $linkSuratBalasan     = trim($_POST['link_surat_balasan']   ?? '') ?: null;
         $jenisSumberData      = $old['jenis_sumber_data'];
         $judulSumberData      = $old['judul_sumber_data'];
         $tahunSumberData      = $old['tahun_sumber_data'];
@@ -201,6 +203,7 @@ function renderFormPes($token) {
             $jenisLayananJson = json_encode($jenisLayanan, JSON_UNESCAPED_UNICODE);
             $saranaJson       = json_encode($sarana,       JSON_UNESCAPED_UNICODE);
 
+            $linkSuratBalasan = ($linkSuratBalasan && filter_var($linkSuratBalasan, FILTER_VALIDATE_URL)) ? $linkSuratBalasan : null;
             $mysqli->begin_transaction();
             try {
                 if ($isRevision) {
@@ -208,14 +211,14 @@ function renderFormPes($token) {
                         "UPDATE pes SET
                             petugas_utama_id=?, kategori_instansi=?, kategori_instansi_lainnya=?,
                             jenis_layanan=?, sarana=?, sarana_lainnya=?,
-                            sentimen_kritik_saran=?, submitted_at=NOW()
+                            sentimen_kritik_saran=?, link_surat_balasan=?, submitted_at=NOW()
                          WHERE id=?"
                     );
                     $stmtSave->bind_param(
-                        "issssssi",
+                        "isssssssi",
                         $petugasUtamaId, $kategoriInstansi, $kategoriInstansiLain,
                         $jenisLayananJson, $saranaJson, $saranaLain,
-                        $sentimenKritikSaran, $existingPes['id']
+                        $sentimenKritikSaran, $linkSuratBalasan, $existingPes['id']
                     );
                     $stmtSave->execute();
                     $pesId = $existingPes['id'];
@@ -229,13 +232,13 @@ function renderFormPes($token) {
                     $stmtSave  = $mysqli->prepare(
                         "INSERT INTO pes
                             (antrian_id, petugas_utama_id, kategori_instansi, kategori_instansi_lainnya,
-                             jenis_layanan, sarana, sarana_lainnya, sentimen_kritik_saran, submitted_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+                             jenis_layanan, sarana, sarana_lainnya, sentimen_kritik_saran, link_surat_balasan, submitted_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
                     );
                     $stmtSave->bind_param(
-                        "iissssss",
+                        "iisssssss",
                         $antrianId, $petugasUtamaId, $kategoriInstansi, $kategoriInstansiLain,
-                        $jenisLayananJson, $saranaJson, $saranaLain, $sentimenKritikSaran
+                        $jenisLayananJson, $saranaJson, $saranaLain, $sentimenKritikSaran, $linkSuratBalasan
                     );
                     $stmtSave->execute();
                     $pesId = $mysqli->insert_id;
@@ -648,6 +651,18 @@ function renderFormPes($token) {
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <!-- Link Surat Balasan (hanya untuk jenis surat) -->
+        <?php if (($antrian['jenis'] ?? '') === 'surat'): ?>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <h2 class="text-sm font-bold text-slate-700 mb-1">Link Surat Balasan</h2>
+            <p class="text-xs text-slate-500 mb-3">Tempel link surat balasan setelah dikirimkan (Google Drive, OneDrive, dll.). Opsional.</p>
+            <input type="url" name="link_surat_balasan"
+                   value="<?= htmlspecialchars($old['link_surat_balasan'] ?? '') ?>"
+                   placeholder="https://drive.google.com/..."
+                   class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400">
+        </div>
+        <?php endif; ?>
 
         <!-- Submit -->
         <button type="submit"

@@ -68,6 +68,10 @@
         .card:nth-child(5)  { animation-delay: 0.33s; }
         .card:nth-child(6)  { animation-delay: 0.40s; }
         .card:nth-child(7)  { animation-delay: 0.47s; }
+        .card:nth-child(8)  { animation-delay: 0.54s; }
+        .card:nth-child(9)  { animation-delay: 0.61s; }
+        .card:nth-child(10) { animation-delay: 0.68s; }
+        .card:nth-child(11) { animation-delay: 0.75s; }
 
         .section-label {
             animation: fadeUp 0.4s ease both;
@@ -75,6 +79,7 @@
         .section-label:nth-of-type(1) { animation-delay: 0s; }
         .section-label:nth-of-type(2) { animation-delay: 0.1s; }
         .section-label:nth-of-type(3) { animation-delay: 0.2s; }
+        .section-label:nth-of-type(4) { animation-delay: 0.3s; }
 
         .divider {
             background: linear-gradient(90deg, transparent, rgba(148,163,184,0.3), transparent);
@@ -106,51 +111,62 @@
                 Layar Utama
                 <span class="inline-block flex-1 h-0.5 bg-slate-700/50"></span>
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <a href="<?= APP_BASE ?>/" target="_blank" class="card block rounded-2xl p-5 sm:p-6
-                    bg-gradient-to-br from-indigo-600 to-blue-700
-                    border border-indigo-500/30 sm:col-span-2">
-                    <div class="flex items-center gap-4">
-                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">🖥️</div>
-                        <div>
-                            <div class="font-bold text-lg sm:text-xl">Layar Antrean</div>
-                            <div class="text-indigo-200 text-sm mt-0.5">Tampilan nomor antrean + QR buku tamu (auto-refresh)</div>
-                        </div>
-                        <div class="ml-auto text-indigo-300 text-xl">›</div>
+            <a href="<?= APP_BASE ?>/" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                bg-gradient-to-br from-indigo-600 to-blue-700
+                border border-indigo-500/30">
+                <div class="flex items-center gap-4">
+                    <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">🖥️</div>
+                    <div>
+                        <div class="font-bold text-lg sm:text-xl">Layar Antrean</div>
+                        <div class="text-indigo-200 text-sm mt-0.5">Tampilan nomor antrean + QR buku tamu (auto-refresh)</div>
                     </div>
-                </a>
+                    <div class="ml-auto text-indigo-300 text-xl">›</div>
+                </div>
+            </a>
+        </section>
 
-                <a href="<?= APP_BASE ?>/absensi" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+        <div class="divider"></div>
+
+        <!-- ── SEKSI 2: PIKET PST ── -->
+        <section>
+            <p class="section-label text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                <span class="inline-block w-4 h-0.5 bg-slate-600"></span>
+                Piket PST
+                <span class="inline-block flex-1 h-0.5 bg-slate-700/50"></span>
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                <a href="<?= APP_BASE ?>/absensi" target="_blank" class="card block rounded-2xl p-5
                     bg-gradient-to-br from-sky-500 to-blue-600
                     border border-sky-500/30">
-                    <div class="flex items-center gap-4">
-                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">🕐</div>
-                        <div>
-                            <div class="font-bold text-lg sm:text-xl">Absensi Piket PST</div>
-                            <div class="text-sky-200 text-sm mt-0.5">Catat kehadiran petugas piket berbasis GPS</div>
-                        </div>
-                        <div class="ml-auto text-sky-300 text-xl">›</div>
-                    </div>
+                    <div class="icon-wrap text-4xl mb-3">🕐</div>
+                    <div class="font-bold text-base sm:text-lg">Absen</div>
+                    <div class="text-sky-200 text-xs mt-1">Catat kehadiran petugas piket berbasis GPS</div>
                 </a>
 
-                <a href="<?= APP_BASE ?>/absensi/admin" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                <a href="<?= APP_BASE ?>/absensi/admin" target="_blank" class="card block rounded-2xl p-5
                     bg-gradient-to-br from-slate-600 to-slate-700
                     border border-slate-500/30">
-                    <div class="flex items-center gap-4">
-                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">⚙️</div>
-                        <div>
-                            <div class="font-bold text-lg sm:text-xl">Admin Absensi</div>
-                            <div class="text-slate-300 text-sm mt-0.5">Atur koordinat & radius PST, lihat rekap absensi</div>
-                        </div>
-                        <div class="ml-auto text-slate-400 text-xl">›</div>
-                    </div>
+                    <div class="icon-wrap text-4xl mb-3">⚙️</div>
+                    <div class="font-bold text-base sm:text-lg">Admin</div>
+                    <div class="text-slate-300 text-xs mt-1">Atur koordinat & radius PST, rekap absensi</div>
                 </a>
+
+                <a href="https://docs.google.com/spreadsheets/d/1bSZ-ZnSUOCH3RWECgp2dEoJofdNvZo3DoSAYbgX5DFk/edit?usp=sharing"
+                   target="_blank" class="card block rounded-2xl p-5
+                    bg-gradient-to-br from-green-600 to-emerald-700
+                    border border-green-500/30">
+                    <div class="icon-wrap text-4xl mb-3">📅</div>
+                    <div class="font-bold text-base sm:text-lg">Jadwal Piket PST</div>
+                    <div class="text-green-200 text-xs mt-1">Jadwal piket petugas PST (Google Sheets)</div>
+                </a>
+
             </div>
         </section>
 
         <div class="divider"></div>
 
-        <!-- ── SEKSI 2: FORM PENDAFTARAN ── -->
+        <!-- ── SEKSI 3: FORM PENDAFTARAN ── -->
         <section>
             <p class="section-label text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
                 <span class="inline-block w-4 h-0.5 bg-slate-600"></span>
@@ -212,7 +228,7 @@
 
         <div class="divider"></div>
 
-        <!-- ── SEKSI 3: MANAJEMEN ── -->
+        <!-- ── SEKSI 4: MANAJEMEN ── -->
         <section>
             <p class="section-label text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
                 <span class="inline-block w-4 h-0.5 bg-slate-600"></span>
@@ -265,6 +281,19 @@
                         <div>
                             <div class="font-bold text-base sm:text-lg">Laporan Bulanan</div>
                             <div class="text-violet-200 text-xs mt-1">Dashboard kunjungan, piket, IKM, PES per bulan</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://drive.google.com/drive/u/2/folders/17YCvYKRLwzW7WAWpo0Uom3hFRiRQoZuy"
+                   target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                    bg-gradient-to-br from-blue-500 to-cyan-600
+                    border border-blue-500/30">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">🗂️</div>
+                        <div>
+                            <div class="font-bold text-base sm:text-lg">Dokumentasi Pelayanan PST</div>
+                            <div class="text-blue-200 text-xs mt-1">Folder dokumentasi pelayanan PST (Google Drive)</div>
                         </div>
                     </div>
                 </a>
@@ -397,7 +426,7 @@
         whatsapp:    'bg-green-900/60 text-green-300 border border-green-700',
         surat:       'bg-amber-900/60 text-amber-300 border border-amber-700',
     };
-    const LABEL = { umum: 'Umum', disabilitas: 'Disabilitas', whatsapp: 'WhatsApp', surat: 'Via Surat' };
+    const LABEL = { umum: 'Umum', disabilitas: 'Disabilitas', whatsapp: 'WhatsApp', surat: 'Surat' };
 
     function isoDate(d) { return d.toISOString().slice(0, 10); }
 

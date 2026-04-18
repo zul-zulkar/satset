@@ -169,6 +169,11 @@ ALTER TABLE `antrian`
 ALTER TABLE `antrian`
   ADD COLUMN `link_surat` VARCHAR(500) NULL;
 
+-- Tambah kolom link surat balasan ke tabel pes
+-- (lewati jika sudah ada — error "Duplicate column name" aman diabaikan)
+ALTER TABLE `pes`
+  ADD COLUMN `link_surat_balasan` VARCHAR(500) NULL;
+
 
 -- ─────────────────────────────────────────────────────────────────────────────
 --  BAGIAN 2b: TABEL PES_KEBUTUHAN_DATA (baru — selalu aman dijalankan)

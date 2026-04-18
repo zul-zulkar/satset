@@ -1,16 +1,17 @@
 <?php
 include '../db.php';
 
-$id = intval($_GET['id'] ?? 0);
-if (!$id) { http_response_code(400); die('ID tidak valid.'); }
+$token = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['token'] ?? '');
+if (!$token) { http_response_code(400); die('Token tidak valid.'); }
 
 // ── Antrian ───────────────────────────────────────────────────────────────────
-$stmt = $mysqli->prepare("SELECT * FROM antrian WHERE id = ? LIMIT 1");
-$stmt->bind_param("i", $id);
+$stmt = $mysqli->prepare("SELECT * FROM antrian WHERE token = ? LIMIT 1");
+$stmt->bind_param("s", $token);
 $stmt->execute();
 $antrian = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 if (!$antrian) { http_response_code(404); die('Data tidak ditemukan.'); }
+$id = $antrian['id'];
 
 // ── Penilaian ─────────────────────────────────────────────────────────────────
 $stmt = $mysqli->prepare("SELECT * FROM penilaian WHERE antrian_id = ? LIMIT 1");
@@ -112,7 +113,7 @@ $QUESTIONS = ['',
 ];
 
 $jkLabel      = ['L' => 'Laki-laki', 'P' => 'Perempuan'];
-$jenisLabel   = ['umum' => 'Umum', 'disabilitas' => 'Disabilitas', 'whatsapp' => 'WhatsApp', 'surat' => 'Via Surat'];
+$jenisLabel   = ['umum' => 'Umum', 'disabilitas' => 'Disabilitas', 'whatsapp' => 'WhatsApp', 'surat' => 'Surat'];
 $sentimenLabel = ['negatif' => '😞 Negatif', 'normal' => '😐 Normal', 'positif' => '😊 Positif'];
 
 $jenis   = $antrian['jenis'] ?? '';
@@ -362,6 +363,27 @@ $tanggal = $antrian['tanggal'] ?? '';
                         <button onclick="cancelLinkSurat()" class="no-print shrink-0 text-gray-500 text-xs px-2 py-1.5 hover:underline">Batal</button>
                     </div>
                     <p id="link-surat-err" class="hidden text-red-500 text-xs mt-1"></p>
+                </dd>
+            </div>
+            <div class="sm:col-span-2">
+                <dt class="text-gray-500 text-xs mb-0.5">Link Surat Balasan</dt>
+                <dd id="link-balasan-display" class="flex items-center gap-2 font-semibold text-gray-800">
+                    <?php if (!empty($pes['link_surat_balasan'])): ?>
+                        <a href="<?= h($pes['link_surat_balasan']) ?>" target="_blank" rel="noopener" class="text-teal-600 underline break-all text-sm"><?= h($pes['link_surat_balasan']) ?></a>
+                    <?php else: ?>
+                        <span class="text-gray-400 italic font-normal text-sm">Belum diisi</span>
+                    <?php endif; ?>
+                    <button onclick="editLinkBalasan()" class="no-print shrink-0 text-xs text-teal-500 hover:text-teal-700 underline">Edit</button>
+                </dd>
+                <dd id="link-balasan-edit" class="hidden mt-1">
+                    <div class="flex gap-2 items-center">
+                        <input type="url" id="link-balasan-input" value="<?= h($pes['link_surat_balasan'] ?? '') ?>"
+                               placeholder="https://drive.google.com/..."
+                               class="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-teal-400">
+                        <button onclick="saveLinkBalasan()" class="no-print shrink-0 bg-teal-600 text-white text-xs px-3 py-1.5 rounded hover:bg-teal-700 transition-colors">Simpan</button>
+                        <button onclick="cancelLinkBalasan()" class="no-print shrink-0 text-gray-500 text-xs px-2 py-1.5 hover:underline">Batal</button>
+                    </div>
+                    <p id="link-balasan-err" class="hidden text-red-500 text-xs mt-1"></p>
                 </dd>
             </div>
             <?php endif; ?>
@@ -617,45 +639,56 @@ function cetakPDF(mode) {
 <?php if ($jenis === 'surat'): ?>
 <script>
 const _APP_BASE = '<?= APP_BASE ?>';
-function editLinkSurat() {
-    document.getElementById('link-surat-display').classList.add('hidden');
-    document.getElementById('link-surat-edit').classList.remove('hidden');
-    document.getElementById('link-surat-input').focus();
-}
-function cancelLinkSurat() {
-    document.getElementById('link-surat-display').classList.remove('hidden');
-    document.getElementById('link-surat-edit').classList.add('hidden');
-    document.getElementById('link-surat-err').classList.add('hidden');
-}
-function saveLinkSurat() {
-    var link = document.getElementById('link-surat-input').value.trim();
-    var err  = document.getElementById('link-surat-err');
-    err.classList.add('hidden');
-    if (link && !/^https?:\/\/.+/.test(link)) {
-        err.textContent = 'URL harus diawali dengan http:// atau https://';
-        err.classList.remove('hidden');
-        return;
+function makeLinkEditor(prefix, endpoint, color, editFn) {
+    function edit() {
+        document.getElementById(prefix + '-display').classList.add('hidden');
+        document.getElementById(prefix + '-edit').classList.remove('hidden');
+        document.getElementById(prefix + '-input').focus();
     }
-    fetch(_APP_BASE + '/action/save_link_surat.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'id=<?= $id ?>&link=' + encodeURIComponent(link)
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(data) {
-        if (data.ok) {
-            var display = document.getElementById('link-surat-display');
-            var html = link
-                ? '<a href="' + link.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" class="text-blue-600 underline break-all text-sm">' + link.replace(/</g,'&lt;') + '</a>'
-                : '<span class="text-gray-400 italic font-normal text-sm">Belum diisi</span>';
-            display.innerHTML = html + ' <button onclick="editLinkSurat()" class="no-print shrink-0 text-xs text-blue-500 hover:text-blue-700 underline">Edit</button>';
-            cancelLinkSurat();
-        } else {
-            err.textContent = data.msg || 'Gagal menyimpan.';
+    function cancel() {
+        document.getElementById(prefix + '-display').classList.remove('hidden');
+        document.getElementById(prefix + '-edit').classList.add('hidden');
+        document.getElementById(prefix + '-err').classList.add('hidden');
+    }
+    function save() {
+        var link = document.getElementById(prefix + '-input').value.trim();
+        var err  = document.getElementById(prefix + '-err');
+        err.classList.add('hidden');
+        if (link && !/^https?:\/\/.+/.test(link)) {
+            err.textContent = 'URL harus diawali dengan http:// atau https://';
             err.classList.remove('hidden');
+            return;
         }
-    });
+        fetch(_APP_BASE + endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'id=<?= $id ?>&link=' + encodeURIComponent(link)
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                var display = document.getElementById(prefix + '-display');
+                var html = link
+                    ? '<a href="' + link.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" class="text-' + color + '-600 underline break-all text-sm">' + link.replace(/</g,'&lt;') + '</a>'
+                    : '<span class="text-gray-400 italic font-normal text-sm">Belum diisi</span>';
+                display.innerHTML = html + ' <button onclick="' + editFn + '()" class="no-print shrink-0 text-xs text-' + color + '-500 hover:text-' + color + '-700 underline">Edit</button>';
+                cancel();
+            } else {
+                err.textContent = data.msg || 'Gagal menyimpan.';
+                err.classList.remove('hidden');
+            }
+        });
+    }
+    return { edit: edit, cancel: cancel, save: save };
 }
+var _editorSurat   = makeLinkEditor('link-surat',  '/action/save_link_surat.php',         'blue', 'editLinkSurat');
+var _editorBalasan = makeLinkEditor('link-balasan', '/action/save_link_surat_balasan.php', 'teal', 'editLinkBalasan');
+function editLinkSurat()    { _editorSurat.edit(); }
+function cancelLinkSurat()  { _editorSurat.cancel(); }
+function saveLinkSurat()    { _editorSurat.save(); }
+function editLinkBalasan()  { _editorBalasan.edit(); }
+function cancelLinkBalasan(){ _editorBalasan.cancel(); }
+function saveLinkBalasan()  { _editorBalasan.save(); }
 </script>
 <?php endif; ?>
 </body>

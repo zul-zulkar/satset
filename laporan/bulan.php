@@ -364,7 +364,7 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
     <div class="text-xs font-medium text-gray-400 uppercase tracking-wide">Filter Jenis</div>
     <?php
     $baseUrl     = APP_BASE . "/laporan/bulan?tahun=$selYear&bulan=$selMonth";
-    $filterOpts  = ['all' => 'Semua', 'whatsapp' => 'WhatsApp', 'surat' => 'Via Surat', 'langsung' => 'Kunjungan Langsung', 'umum' => 'Umum', 'disabilitas' => 'Disabilitas'];
+    $filterOpts  = ['all' => 'Semua', 'whatsapp' => 'WhatsApp', 'surat' => 'Surat', 'langsung' => 'Kunjungan Langsung', 'umum' => 'Umum', 'disabilitas' => 'Disabilitas'];
     $filterActiv = ['all' => 'bg-blue-600 text-white', 'whatsapp' => 'bg-green-600 text-white', 'surat' => 'bg-amber-600 text-white', 'langsung' => 'bg-indigo-600 text-white', 'umum' => 'bg-blue-500 text-white', 'disabilitas' => 'bg-purple-600 text-white'];
     ?>
     <?php foreach ($filterOpts as $key => $label):

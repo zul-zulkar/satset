@@ -23,6 +23,7 @@ function renderFormSurat($judul) {
         $kelompok_umur  = $_POST['kelompok_umur']       ?? '';
         $pekerjaan      = trim($_POST['pekerjaan']      ?? '');
         $instansi       = trim($_POST['instansi']       ?? '');
+        $link_surat     = trim($_POST['link_surat']     ?? '');
         $pemanfaatan    = $_POST['pemanfaatan_data']    ?? '';
         $dataNama       = $_POST['data_nama']           ?? [];
         $tahunDari      = $_POST['tahun_dari']          ?? [];
@@ -37,8 +38,8 @@ function renderFormSurat($judul) {
             $errorMsg = "Nama hanya boleh berisi huruf, spasi, dan tanda petik satu (').";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errorMsg = 'Format email tidak valid.';
-        } elseif (!preg_match('/^(\+62|08)\d{7,13}$/', $telepon)) {
-            $errorMsg = 'Nomor HP tidak valid. Awali dengan 08 atau +62.';
+        } elseif (!preg_match('/^(\+62|0)\d{6,13}$/', $telepon)) {
+            $errorMsg = 'Nomor telepon tidak valid. Awali dengan 08, 0362 (kantor), atau +62.';
         } elseif (!in_array($jk, $validJk)) {
             $errorMsg = 'Pilih jenis kelamin.';
         } elseif (!in_array($pendidikan, $validPendidikan)) {
@@ -71,20 +72,22 @@ function renderFormSurat($judul) {
             $nomor_baru = (int)$stmtN->get_result()->fetch_assoc()['maxn'] + 1;
             $stmtN->close();
 
+            $link_surat = filter_var($link_surat, FILTER_VALIDATE_URL) ? $link_surat : null;
+
             $stmt = $mysqli->prepare(
                 "INSERT INTO antrian
                     (nama, email, telepon, jk, pendidikan, kelompok_umur,
                      pekerjaan, instansi, pemanfaatan_data, data_dibutuhkan,
-                     kunjungan_pst, jenis, nomor, tanggal, token)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'surat', ?, ?, ?)"
+                     kunjungan_pst, jenis, nomor, tanggal, token, link_surat)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'surat', ?, ?, ?, ?)"
             );
             $stmt->bind_param(
-                "ssssssssssiss",
+                "ssssssssssisss",
                 $nama, $email, $telepon,
                 $jk, $pendidikan, $kelompok_umur,
                 $pekerjaan, $instansi,
                 $pemanfaatan, $dataJson,
-                $nomor_baru, $tanggal, $token
+                $nomor_baru, $tanggal, $token, $link_surat
             );
             if ($stmt->execute()) {
                 $tampilkanForm = false;
@@ -143,10 +146,10 @@ function renderFormSurat($judul) {
                            class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-amber-500">
                 </div>
 
-                <!-- 3. Nomor HP -->
+                <!-- 3. Nomor Telepon -->
                 <div>
-                    <label class="block mb-1 font-semibold">Nomor HP <span class="text-red-500">*</span></label>
-                    <input name="telepon" required placeholder="08xxxxxxxxxx"
+                    <label class="block mb-1 font-semibold">Nomor Telepon <span class="text-red-500">*</span></label>
+                    <input name="telepon" required placeholder="08xx / 0362xxxxxx"
                            value="<?= htmlspecialchars($old['telepon'] ?? '') ?>"
                            class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-amber-500">
                 </div>
@@ -231,7 +234,16 @@ function renderFormSurat($judul) {
                            class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-amber-500">
                 </div>
 
-                <!-- 9. Pemanfaatan Hasil -->
+                <!-- 9. Link Surat Masuk -->
+                <div>
+                    <label class="block mb-1 font-semibold">Link Surat Masuk <span class="text-gray-400 font-normal text-xs">(opsional)</span></label>
+                    <input name="link_surat" type="url" placeholder="https://drive.google.com/..."
+                           value="<?= htmlspecialchars($old['link_surat'] ?? '') ?>"
+                           class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    <p class="text-xs text-gray-400 mt-1">Tempel link Google Drive, OneDrive, atau platform lain tempat surat tersimpan.</p>
+                </div>
+
+                <!-- 10. Pemanfaatan Hasil -->
                 <div>
                     <label class="block mb-2 font-semibold">Pemanfaatan Hasil <span class="text-red-500">*</span></label>
                     <div>
@@ -248,7 +260,7 @@ function renderFormSurat($judul) {
                     </div>
                 </div>
 
-                <!-- 10. Data yang Dibutuhkan -->
+                <!-- 11. Data yang Dibutuhkan -->
                 <div>
                     <label class="block mb-1 font-semibold">Data yang Dibutuhkan <span class="text-red-500">*</span></label>
                     <p class="text-gray-500 text-xs mb-3">Tambahkan satu atau lebih data yang Anda butuhkan beserta rentang tahunnya.</p>
@@ -371,8 +383,8 @@ function renderFormSurat($judul) {
                 }
 
                 var telepon = document.querySelector('input[name="telepon"]').value.trim();
-                if (!/^(\+62|08)\d{7,13}$/.test(telepon)) {
-                    alert('Nomor HP tidak valid. Awali dengan 08 atau +62, minimal 9 digit.');
+                if (!/^(\+62|0)\d{6,13}$/.test(telepon)) {
+                    alert('Nomor telepon tidak valid. Awali dengan 08, 0362 (kantor), atau +62.');
                     e.preventDefault(); return;
                 }
 

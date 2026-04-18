@@ -6,7 +6,8 @@ $tahun = $_GET['tahun'] ?? date('Y');
 
 // Tab 1: Semua tamu (umum + disabilitas + whatsapp + surat)
 $stmt1 = $mysqli->prepare(
-    "SELECT a.*
+    "SELECT a.*,
+            (SELECT link_surat_balasan FROM pes WHERE antrian_id = a.id LIMIT 1) AS link_surat_balasan
      FROM antrian a
      WHERE MONTH(a.tanggal) = ? AND YEAR(a.tanggal) = ?
      ORDER BY a.tanggal DESC, a.id DESC"
@@ -19,7 +20,8 @@ $resTamu = $stmt1->get_result();
 $stmt2 = $mysqli->prepare(
     "SELECT a.*,
             (SELECT id FROM penilaian WHERE antrian_id = a.id LIMIT 1) AS penilaian_id,
-            (SELECT id FROM pes       WHERE antrian_id = a.id LIMIT 1) AS pes_id
+            (SELECT id FROM pes       WHERE antrian_id = a.id LIMIT 1) AS pes_id,
+            (SELECT link_surat_balasan FROM pes WHERE antrian_id = a.id LIMIT 1) AS link_surat_balasan
      FROM antrian a
      WHERE (a.jenis IN ('whatsapp','surat') OR (a.jenis IN ('umum','disabilitas') AND a.kunjungan_pst = 1))
        AND MONTH(a.tanggal) = ? AND YEAR(a.tanggal) = ?
@@ -33,7 +35,7 @@ $jenisMeta = [
     'umum'        => ['border' => 'border-l-4 border-l-blue-500',   'badge' => 'bg-blue-100 text-blue-800 border-blue-200',     'icon' => 'fa-solid fa-user',         'label' => 'Umum'],
     'disabilitas' => ['border' => 'border-l-4 border-l-purple-500', 'badge' => 'bg-purple-100 text-purple-800 border-purple-200','icon' => 'fa-solid fa-wheelchair',   'label' => 'Disabilitas'],
     'whatsapp'    => ['border' => 'border-l-4 border-l-green-500',  'badge' => 'bg-green-100 text-green-800 border-green-200',   'icon' => 'fa-brands fa-whatsapp',    'label' => 'WhatsApp'],
-    'surat'       => ['border' => 'border-l-4 border-l-amber-500',  'badge' => 'bg-amber-100 text-amber-800 border-amber-200',   'icon' => 'fa-solid fa-envelope',     'label' => 'Via Surat'],
+    'surat'       => ['border' => 'border-l-4 border-l-amber-500',  'badge' => 'bg-amber-100 text-amber-800 border-amber-200',   'icon' => 'fa-solid fa-envelope',     'label' => 'Surat'],
 ];
 ?>
 <!DOCTYPE html>
@@ -161,7 +163,9 @@ $jenisMeta = [
                 data-kelompok-umur="<?= htmlspecialchars($row['kelompok_umur'] ?? '') ?>"
                 data-pekerjaan="<?= htmlspecialchars($row['pekerjaan'] ?? '') ?>"
                 data-pemanfaatan-data="<?= htmlspecialchars($row['pemanfaatan_data'] ?? '') ?>"
-                data-data-dibutuhkan="<?= htmlspecialchars($row['data_dibutuhkan'] ?? '') ?>">
+                data-data-dibutuhkan="<?= htmlspecialchars($row['data_dibutuhkan'] ?? '') ?>"
+                data-link-surat="<?= htmlspecialchars($row['link_surat'] ?? '') ?>"
+                data-link-surat-balasan="<?= htmlspecialchars($row['link_surat_balasan'] ?? '') ?>">
                 <td class="border p-2 text-center expand-toggle" style="cursor:pointer;width:40px"><span class="expand-icon">▶</span></td>
                 <td class="border p-2 text-center">
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border <?= $meta['badge'] ?>">
@@ -245,7 +249,9 @@ $jenisMeta = [
                 data-kelompok-umur="<?= htmlspecialchars($row['kelompok_umur'] ?? '') ?>"
                 data-pekerjaan="<?= htmlspecialchars($row['pekerjaan'] ?? '') ?>"
                 data-pemanfaatan-data="<?= htmlspecialchars($row['pemanfaatan_data'] ?? '') ?>"
-                data-data-dibutuhkan="<?= htmlspecialchars($row['data_dibutuhkan'] ?? '') ?>">
+                data-data-dibutuhkan="<?= htmlspecialchars($row['data_dibutuhkan'] ?? '') ?>"
+                data-link-surat="<?= htmlspecialchars($row['link_surat'] ?? '') ?>"
+                data-link-surat-balasan="<?= htmlspecialchars($row['link_surat_balasan'] ?? '') ?>">
                 <td class="border p-2 text-center expand-toggle" style="cursor:pointer;width:40px"><span class="expand-icon">▶</span></td>
                 <td class="border p-2 text-center"><input type="checkbox" class="select-pst" data-id="<?= $row['id'] ?>"></td>
                 <td class="border p-2 text-center">
@@ -334,6 +340,21 @@ $jenisMeta = [
                 <div>
                     <label class="block mb-1 font-medium text-gray-700">Tanggal Kunjungan <span class="text-red-500">*</span></label>
                     <input id="edit-tanggal" type="date" class="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                </div>
+            </div>
+
+            <!-- Surat (jenis=surat only) -->
+            <div id="edit-section-surat" class="hidden space-y-3 border-t border-amber-100 pt-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-amber-500">Data Surat</p>
+                <div>
+                    <label class="block mb-1 font-medium text-gray-700">Link Surat Masuk</label>
+                    <input id="edit-link-surat" type="url" placeholder="https://drive.google.com/..."
+                           class="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium text-gray-700">Link Surat Balasan</label>
+                    <input id="edit-link-surat-balasan" type="url" placeholder="https://drive.google.com/..."
+                           class="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
                 </div>
             </div>
 
@@ -599,8 +620,24 @@ function buildExpandDetail(tr, pData, isPST) {
     var instansi = tr.data('instansi') || '-';
     var email    = tr.data('email')    || '-';
 
+    var jenis = tr.data('jenis') || '';
+
     if (!isPST) {
         // Tab 1: minimal detail
+        var linkSurat1   = tr.attr('data-link-surat') || '';
+        var suratLinksHtml1 = '';
+        if (jenis === 'surat') {
+            suratLinksHtml1 = "<div class='flex flex-col gap-2 mt-3 pt-3 border-t border-gray-200'>" +
+                "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-amber-50 border-amber-200'>" +
+                  "<div class='flex items-center gap-2 min-w-0'>" +
+                    "<i class='fas fa-envelope text-amber-600 flex-shrink-0'></i>" +
+                    "<span class='font-semibold text-xs text-amber-800'>Surat Masuk</span>" +
+                  "</div>" +
+                  (linkSurat1
+                    ? "<a href='" + escHtml(linkSurat1) + "' target='_blank' class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors'><i class='fas fa-external-link-alt'></i><span class='ml-1'>Buka</span></a>"
+                    : "<span class='text-xs text-amber-600 italic'>belum diisi</span>") +
+                "</div></div>";
+        }
         return "<div class='bg-gray-50 border-t border-gray-200 p-3 sm:p-4 expand-detail text-sm' style='display:none;'>" +
             "<div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2'>" +
             field('Jenis Kelamin', jk) +
@@ -608,6 +645,7 @@ function buildExpandDetail(tr, pData, isPST) {
             field('Instansi / Organisasi', instansi) +
             field('Email', email) +
             "</div>" +
+            suratLinksHtml1 +
             "<div class='mt-3 pt-3 border-t border-gray-200 flex gap-2 flex-wrap'>" +
             "<button class='bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs' " +
             "onclick='openEditModal($(\"tr.expandable-row[data-id=" + id + "]\"))'>" +
@@ -632,104 +670,121 @@ function buildExpandDetail(tr, pData, isPST) {
         canRevise = secsLeft > 0;
     }
 
-    // ── Helper: compact link card ─────────────────────────────────────────────
-    function linkCard(iconClass, label, badgeClass, url, rowId, type) {
-        var nameEsc = escHtml(nama).replace(/'/g, '&#39;');
-        return "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border " + badgeClass + "'>" +
-            "<div class='flex items-center gap-2 min-w-0'>" +
-              "<i class='" + iconClass + " flex-shrink-0'></i>" +
-              "<span class='font-semibold text-xs truncate'>" + label + "</span>" +
-            "</div>" +
-            "<div class='flex gap-1.5 flex-shrink-0'>" +
-              "<button onclick='tampilkanQR(\"" + escHtml(url) + "\", \"" + nameEsc + "\")' " +
-                "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-600 hover:bg-slate-700 text-white transition-colors'>" +
-                "<i class='fas fa-qrcode'></i><span class='hidden sm:inline ml-1'>QR</span></button>" +
-              "<button onclick='salinLink(\"" + escHtml(url) + "\", this)' " +
-                "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors'>" +
-                "<i class='fas fa-copy'></i><span class='hidden sm:inline ml-1'>Salin</span></button>" +
-              "<a href='" + escHtml(url) + "' target='_blank' " +
-                "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-gray-500 hover:bg-gray-600 text-white transition-colors'>" +
-                "<i class='fas fa-external-link-alt'></i><span class='hidden sm:inline ml-1'>Buka</span></a>" +
-            "</div></div>";
+    var nameEsc = escHtml(nama).replace(/'/g, '&#39;');
+
+    // ── Row 1: link & action items ────────────────────────────────────────────
+    var row1 = '';
+
+    // Surat links (hanya jenis surat)
+    if (jenis === 'surat') {
+        var linkSurat   = tr.attr('data-link-surat') || '';
+        var linkBalasan = tr.attr('data-link-surat-balasan') || '';
+        if (linkSurat) {
+            row1 += "<a href='" + escHtml(linkSurat) + "' target='_blank' " +
+                    "class='inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                    "<i class='fas fa-envelope'></i> Surat Masuk</a>";
+        }
+        if (linkBalasan) {
+            row1 += "<a href='" + escHtml(linkBalasan) + "' target='_blank' " +
+                    "class='inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                    "<i class='fas fa-reply'></i> Surat Balasan</a>";
+        }
     }
 
-    // ── Survey Kepuasan link card ─────────────────────────────────────────────
-    var surveyLinkHtml = '';
+    // Survey item
     if (!hasPenilaian) {
         if (token) {
-            var surveyUrl = APP_URL + '/penilaian/?token=' + token;
-            surveyLinkHtml = linkCard(
-                'fas fa-star text-yellow-500',
-                'Survei Kepuasan',
-                'bg-yellow-50 border-yellow-200 text-yellow-800',
-                surveyUrl, id, 'survey'
-            );
+            var surveyUrl    = APP_URL + '/penilaian/?token=' + token;
+            var surveyUrlEsc = escHtml(surveyUrl);
+            row1 += "<span class='inline-flex rounded-md overflow-hidden text-xs border border-yellow-200 items-stretch'>" +
+                      "<span class='bg-yellow-50 text-yellow-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
+                        "<i class='fas fa-star text-yellow-500 text-[10px]'></i>Survei Kepuasan" +
+                      "</span>" +
+                      "<button onclick='tampilkanQR(\"" + surveyUrlEsc + "\",\"" + nameEsc + "\")' " +
+                        "class='bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1.5 border-l border-yellow-200 transition-colors' title='QR Code'>" +
+                        "<i class='fas fa-qrcode text-[10px]'></i></button>" +
+                      "<button onclick='salinLink(\"" + surveyUrlEsc + "\",this)' " +
+                        "class='bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1.5 border-l border-yellow-200 transition-colors' title='Salin link'>" +
+                        "<i class='fas fa-copy text-[10px]'></i></button>" +
+                      "<a href='" + surveyUrlEsc + "' target='_blank' " +
+                        "class='bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1.5 border-l border-yellow-200 transition-colors' title='Buka'>" +
+                        "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
+                    "</span>";
         } else {
-            surveyLinkHtml =
-                "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-yellow-50 border-yellow-200' id='survey-link-container-" + id + "'>" +
-                  "<div class='flex items-center gap-2'>" +
-                    "<i class='fas fa-star text-yellow-500 flex-shrink-0'></i>" +
-                    "<span class='font-semibold text-xs text-yellow-800'>Survei Kepuasan</span>" +
-                    "<span class='text-xs text-yellow-600 italic'>(link belum dibuat)</span>" +
-                  "</div>" +
-                  "<button onclick='generateToken(" + id + ", this)' " +
-                    "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-yellow-500 hover:bg-yellow-600 text-white transition-colors whitespace-nowrap'>" +
-                    "<i class='fas fa-link'></i><span class='ml-1'>Buat Link</span></button>" +
-                "</div>";
+            row1 += "<button id='survey-link-container-" + id + "' onclick='generateToken(" + id + ",this)' " +
+                    "class='inline-flex items-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 border border-yellow-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                    "<i class='fas fa-link text-yellow-500'></i> Buat Link Survei</button>";
         }
     } else if (canRevise && token) {
-        var surveyUrlRevisi = APP_URL + '/penilaian/?token=' + token;
-        surveyLinkHtml = linkCard(
-            'fas fa-edit text-amber-500',
-            'Revisi Penilaian',
-            'bg-amber-50 border-amber-200 text-amber-800',
-            surveyUrlRevisi, id, 'survey'
-        );
+        var surveyUrlRevisi    = APP_URL + '/penilaian/?token=' + token;
+        var surveyUrlRevisiEsc = escHtml(surveyUrlRevisi);
+        row1 += "<span class='inline-flex rounded-md overflow-hidden text-xs border border-amber-200 items-stretch'>" +
+                  "<span class='bg-amber-50 text-amber-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
+                    "<i class='fas fa-edit text-amber-500 text-[10px]'></i>Revisi Penilaian" +
+                  "</span>" +
+                  "<button onclick='tampilkanQR(\"" + surveyUrlRevisiEsc + "\",\"" + nameEsc + "\")' " +
+                    "class='bg-amber-400 hover:bg-amber-500 text-white px-2 py-1.5 border-l border-amber-200 transition-colors' title='QR Code'>" +
+                    "<i class='fas fa-qrcode text-[10px]'></i></button>" +
+                  "<button onclick='salinLink(\"" + surveyUrlRevisiEsc + "\",this)' " +
+                    "class='bg-amber-400 hover:bg-amber-500 text-white px-2 py-1.5 border-l border-amber-200 transition-colors' title='Salin link'>" +
+                    "<i class='fas fa-copy text-[10px]'></i></button>" +
+                  "<a href='" + surveyUrlRevisiEsc + "' target='_blank' " +
+                    "class='bg-amber-400 hover:bg-amber-500 text-white px-2 py-1.5 border-l border-amber-200 transition-colors' title='Buka'>" +
+                    "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
+                "</span>";
     }
 
     var hasPes = parseInt(tr.attr('data-pes-id') || 0) > 0;
 
-    // ── PES link card (sembunyikan jika PES sudah terisi) ─────────────────────
-    var pesLinkHtml = '';
+    // PES item
     if (!hasPes) {
         if (tokenPes) {
-            var pesUrl = APP_URL + '/pes/?token=' + tokenPes;
-            pesLinkHtml = linkCard(
-                'fas fa-clipboard-list text-teal-600',
-                'Form PES',
-                'bg-teal-50 border-teal-200 text-teal-800',
-                pesUrl, id, 'pes'
-            );
+            var pesUrl    = APP_URL + '/pes/?token=' + tokenPes;
+            var pesUrlEsc = escHtml(pesUrl);
+            row1 += "<span class='inline-flex rounded-md overflow-hidden text-xs border border-teal-200 items-stretch'>" +
+                      "<span class='bg-teal-50 text-teal-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
+                        "<i class='fas fa-clipboard-list text-teal-600 text-[10px]'></i>Form PES" +
+                      "</span>" +
+                      "<button onclick='tampilkanQR(\"" + pesUrlEsc + "\",\"" + nameEsc + "\")' " +
+                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='QR Code'>" +
+                        "<i class='fas fa-qrcode text-[10px]'></i></button>" +
+                      "<button onclick='salinLink(\"" + pesUrlEsc + "\",this)' " +
+                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Salin link'>" +
+                        "<i class='fas fa-copy text-[10px]'></i></button>" +
+                      "<a href='" + pesUrlEsc + "' target='_blank' " +
+                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Buka'>" +
+                        "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
+                    "</span>";
         } else {
-            pesLinkHtml =
-                "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-teal-50 border-teal-200' id='pes-link-container-" + id + "'>" +
-                  "<div class='flex items-center gap-2'>" +
-                    "<i class='fas fa-clipboard-list text-teal-600 flex-shrink-0'></i>" +
-                    "<span class='font-semibold text-xs text-teal-800'>Form PES</span>" +
-                    "<span class='text-xs text-teal-600 italic'>(link belum dibuat)</span>" +
-                  "</div>" +
-                  "<button onclick='generateTokenPes(" + id + ", this)' " +
-                    "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors whitespace-nowrap'>" +
-                    "<i class='fas fa-link'></i><span class='ml-1'>Buat Link</span></button>" +
-                "</div>";
+            row1 += "<button id='pes-link-container-" + id + "' onclick='generateTokenPes(" + id + ",this)' " +
+                    "class='inline-flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                    "<i class='fas fa-link text-teal-500'></i> Buat Link PES</button>";
         }
     }
 
-    var penilaianBtn = hasPenilaian
-        ? "<button onclick='openPenilaianModal(" + id + ")' " +
-          "class='inline-flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
-          "<i class='fas fa-star'></i>Lihat Penilaian</button>"
-        : '';
+    // ── Row 2: admin buttons ──────────────────────────────────────────────────
+    var row2 = "<button class='inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' " +
+        "onclick='openEditModal($(\"tr.expandable-row[data-id=" + id + "]\"))'>" +
+        "<i class='fas fa-edit'></i>Edit</button>" +
+        "<button class='inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' onclick='deleteUser(" + id + ")'>" +
+        "<i class='fas fa-trash-alt'></i>Hapus</button>";
 
-    var pesViewBtn = hasPes
-        ? "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?id=" + id + "#section-pes' target='_blank' " +
-          "class='inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
-          "<i class='fas fa-clipboard-check'></i> Lihat PES</a>"
-        : '';
-
-    var detailBtn = "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?id=" + id + "' target='_blank' " +
-        "class='inline-flex items-center gap-1.5 bg-slate-500 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
-        "<i class='fas fa-file-lines'></i> Detail Lengkap</a>";
+    if (hasPenilaian) {
+        row2 += "<button onclick='openPenilaianModal(" + id + ")' " +
+                "class='inline-flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                "<i class='fas fa-star'></i> Lihat Penilaian</button>";
+    }
+    if (hasPes && token) {
+        row2 += "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?token=" + encodeURIComponent(token) + "#section-pes' target='_blank' " +
+                "class='inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                "<i class='fas fa-clipboard-check'></i> Lihat PES</a>";
+    }
+    row2 += token
+        ? "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?token=" + encodeURIComponent(token) + "' target='_blank' " +
+          "class='inline-flex items-center gap-1.5 bg-slate-500 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+          "<i class='fas fa-file-lines'></i> Detail Lengkap</a>"
+        : "<span class='inline-flex items-center gap-1.5 bg-slate-300 text-slate-500 px-3 py-1.5 rounded-md text-xs font-medium cursor-not-allowed' title='Token belum dibuat'>" +
+          "<i class='fas fa-file-lines'></i> Detail Lengkap</span>";
 
     return "<div class='bg-gray-50 border-t border-gray-200 p-3 sm:p-4 expand-detail text-sm' style='display:none;'>" +
         "<div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 mb-3'>" +
@@ -738,20 +793,9 @@ function buildExpandDetail(tr, pData, isPST) {
         field('Jumlah Pengunjung', jumlah) +
         field('Keperluan', keperluan, 'sm:col-span-2 md:col-span-3') +
         "</div>" +
-        "<div class='flex flex-col gap-2 mt-3 pt-3 border-t border-gray-200'>" +
-          surveyLinkHtml +
-          pesLinkHtml +
-        "</div>" +
-        "<div class='mt-3 pt-3 border-t border-gray-200 flex gap-2 flex-wrap'>" +
-          "<button class='inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' " +
-          "onclick='openEditModal($(\"tr.expandable-row[data-id=" + id + "]\"))'>" +
-          "<i class='fas fa-edit'></i>Edit</button>" +
-          "<button class='inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' onclick='deleteUser(" + id + ")'>" +
-            "<i class='fas fa-trash-alt'></i>Hapus</button>" +
-          penilaianBtn +
-          pesViewBtn +
-          detailBtn +
-        "</div></div>";
+        "<div class='flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-200'>" + row1 + "</div>" +
+        "<div class='flex flex-wrap gap-2 mt-2 pt-2 border-t border-gray-100'>" + row2 + "</div>" +
+        "</div>";
 }
 
 // ── Expand row ───────────────────────────────────────────────────────────────
@@ -1054,6 +1098,14 @@ function openEditModal(tr) {
     document.getElementById('edit-jk').value      = tr.data('jk')      || '';
     document.getElementById('edit-tanggal').value = tr.data('tanggal') || '';
 
+    // Section surat
+    var sSurat = document.getElementById('edit-section-surat');
+    sSurat.classList.toggle('hidden', jenis !== 'surat');
+    if (jenis === 'surat') {
+        document.getElementById('edit-link-surat').value         = tr.data('link-surat')         || '';
+        document.getElementById('edit-link-surat-balasan').value = tr.attr('data-link-surat-balasan') || '';
+    }
+
     // Section kunjungan (umum/disabilitas)
     var sKunjungan = document.getElementById('edit-section-kunjungan');
     sKunjungan.classList.toggle('hidden', !isLangsung);
@@ -1177,6 +1229,8 @@ function submitEditModal() {
                         })(),
         pemanfaatan_data: document.getElementById('edit-pemanfaatan').value,
         data_dibutuhkan:  dataDibutuhkan || '',
+        link_surat:         document.getElementById('edit-link-surat').value.trim(),
+        link_surat_balasan: document.getElementById('edit-link-surat-balasan').value.trim(),
     };
 
     $.ajax({
@@ -1244,24 +1298,22 @@ function generateToken(id, btn) {
                 var surveyUrl = APP_URL + '/penilaian/?token=' + res.token;
                 var nama = tr.data('nama') || '';
                 var nameEsc = escHtml(nama).replace(/'/g, '&#39;');
+                var surveyUrlEsc = escHtml(surveyUrl);
                 $('#survey-link-container-' + id).replaceWith(
-                    "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-yellow-50 border-yellow-200'>" +
-                      "<div class='flex items-center gap-2 min-w-0'>" +
-                        "<i class='fas fa-star text-yellow-500 flex-shrink-0'></i>" +
-                        "<span class='font-semibold text-xs text-yellow-800 truncate'>Survei Kepuasan</span>" +
-                      "</div>" +
-                      "<div class='flex gap-1.5 flex-shrink-0'>" +
-                        "<button onclick='tampilkanQR(\"" + escHtml(surveyUrl) + "\", \"" + nameEsc + "\")' " +
-                          "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-600 hover:bg-slate-700 text-white transition-colors'>" +
-                          "<i class='fas fa-qrcode'></i><span class='hidden sm:inline ml-1'>QR</span></button>" +
-                        "<button onclick='salinLink(\"" + escHtml(surveyUrl) + "\", this)' " +
-                          "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors'>" +
-                          "<i class='fas fa-copy'></i><span class='hidden sm:inline ml-1'>Salin</span></button>" +
-                        "<a href='" + escHtml(surveyUrl) + "' target='_blank' " +
-                          "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-gray-500 hover:bg-gray-600 text-white transition-colors'>" +
-                          "<i class='fas fa-external-link-alt'></i><span class='hidden sm:inline ml-1'>Buka</span></a>" +
-                      "</div>" +
-                    "</div>"
+                    "<span class='inline-flex rounded-md overflow-hidden text-xs border border-yellow-200 items-stretch'>" +
+                      "<span class='bg-yellow-50 text-yellow-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
+                        "<i class='fas fa-star text-yellow-500 text-[10px]'></i>Survei Kepuasan" +
+                      "</span>" +
+                      "<button onclick='tampilkanQR(\"" + surveyUrlEsc + "\",\"" + nameEsc + "\")' " +
+                        "class='bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1.5 border-l border-yellow-200 transition-colors' title='QR Code'>" +
+                        "<i class='fas fa-qrcode text-[10px]'></i></button>" +
+                      "<button onclick='salinLink(\"" + surveyUrlEsc + "\",this)' " +
+                        "class='bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1.5 border-l border-yellow-200 transition-colors' title='Salin link'>" +
+                        "<i class='fas fa-copy text-[10px]'></i></button>" +
+                      "<a href='" + surveyUrlEsc + "' target='_blank' " +
+                        "class='bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1.5 border-l border-yellow-200 transition-colors' title='Buka'>" +
+                        "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
+                    "</span>"
                 );
             } else {
                 alert('Gagal membuat link survei.');
@@ -1290,24 +1342,22 @@ function generateTokenPes(id, btn) {
                 var pesUrl = APP_URL + '/pes/?token=' + res.token;
                 var nama = tr.data('nama') || '';
                 var nameEsc = escHtml(nama).replace(/'/g, '&#39;');
+                var pesUrlEsc = escHtml(pesUrl);
                 $('#pes-link-container-' + id).replaceWith(
-                    "<div class='flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg border bg-teal-50 border-teal-200'>" +
-                      "<div class='flex items-center gap-2 min-w-0'>" +
-                        "<i class='fas fa-clipboard-list text-teal-600 flex-shrink-0'></i>" +
-                        "<span class='font-semibold text-xs text-teal-800 truncate'>Form PES</span>" +
-                      "</div>" +
-                      "<div class='flex gap-1.5 flex-shrink-0'>" +
-                        "<button onclick='tampilkanQR(\"" + escHtml(pesUrl) + "\", \"" + nameEsc + "\")' " +
-                          "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-600 hover:bg-slate-700 text-white transition-colors'>" +
-                          "<i class='fas fa-qrcode'></i><span class='hidden sm:inline ml-1'>QR</span></button>" +
-                        "<button onclick='salinLink(\"" + escHtml(pesUrl) + "\", this)' " +
-                          "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors'>" +
-                          "<i class='fas fa-copy'></i><span class='hidden sm:inline ml-1'>Salin</span></button>" +
-                        "<a href='" + escHtml(pesUrl) + "' target='_blank' " +
-                          "class='inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-gray-500 hover:bg-gray-600 text-white transition-colors'>" +
-                          "<i class='fas fa-external-link-alt'></i><span class='hidden sm:inline ml-1'>Buka</span></a>" +
-                      "</div>" +
-                    "</div>"
+                    "<span class='inline-flex rounded-md overflow-hidden text-xs border border-teal-200 items-stretch'>" +
+                      "<span class='bg-teal-50 text-teal-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
+                        "<i class='fas fa-clipboard-list text-teal-600 text-[10px]'></i>Form PES" +
+                      "</span>" +
+                      "<button onclick='tampilkanQR(\"" + pesUrlEsc + "\",\"" + nameEsc + "\")' " +
+                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='QR Code'>" +
+                        "<i class='fas fa-qrcode text-[10px]'></i></button>" +
+                      "<button onclick='salinLink(\"" + pesUrlEsc + "\",this)' " +
+                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Salin link'>" +
+                        "<i class='fas fa-copy text-[10px]'></i></button>" +
+                      "<a href='" + pesUrlEsc + "' target='_blank' " +
+                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Buka'>" +
+                        "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
+                    "</span>"
                 );
             } else {
                 alert('Gagal membuat link PES.');

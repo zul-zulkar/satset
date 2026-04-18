@@ -11,6 +11,13 @@
         @media (min-width: 768px) {
             body { height: 100dvh; overflow: hidden; }
         }
+        #qr-disabilitas canvas, #qr-disabilitas img,
+        #qr-umum canvas, #qr-umum img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto !important;
+            height: auto !important;
+        }
     </style>
 </head>
 <body class="bg-gray-950 text-white flex flex-col p-3 md:p-4 gap-3 md:gap-4">
@@ -37,70 +44,75 @@
 
     <!-- HEADER -->
     <header class="text-center shrink-0">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide">BUKU TAMU</h1>
-        <p class="text-gray-400 text-xs sm:text-sm mt-0.5">Pelayanan Statistik Terpadu — BPS Kabupaten Buleleng</p>
-        <p class="text-gray-500 text-xs" id="tanggal-hari"></p>
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide">BUKU TAMU</h1>
+        <p class="text-gray-400 text-sm sm:text-base mt-0.5">Pelayanan Statistik Terpadu — BPS Kabupaten Buleleng</p>
+        <p class="text-gray-500 text-sm" id="tanggal-hari"></p>
     </header>
 
-    <!-- MAIN GRID: 2-col, 3 explicit rows on desktop (fills screen); natural wrap on mobile -->
-    <div class="flex-1 grid grid-cols-2 gap-3 md:gap-4 md:grid-rows-3 min-h-0">
+    <!-- ROW 1: QR Codes — takes majority of remaining height -->
+    <div id="qr-section" class="flex-[3] grid grid-cols-2 gap-3 md:gap-4 min-h-0">
 
-        <!-- Row 1 col 1 — QR Disabilitas -->
-        <div class="bg-white text-black rounded-2xl p-3 flex flex-col items-center justify-between min-h-0">
-            <p class="font-bold text-gray-600 text-[9px] sm:text-[10px] uppercase tracking-widest shrink-0">Daftar Antrean — Disabilitas</p>
-            <div id="qr-disabilitas" class="flex justify-center my-1 flex-1 items-center min-h-0"></div>
+        <!-- QR Disabilitas -->
+        <div class="bg-white text-black rounded-2xl p-4 flex flex-col items-center justify-between min-h-0">
+            <p class="font-bold text-gray-600 text-xs sm:text-sm uppercase tracking-widest shrink-0">Daftar Antrean — Disabilitas</p>
+            <div id="qr-disabilitas" class="flex justify-center items-center flex-1 min-h-0 py-3 px-3"></div>
             <a id="link-disabilitas" href="<?= APP_URL ?>/disabilitas" target="_blank" rel="noopener"
-               class="block bg-blue-700 text-white text-xs py-1.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
+               class="block bg-blue-700 text-white text-sm py-2.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
         </div>
 
-        <!-- Row 1 col 2 — Nomor Disabilitas -->
+        <!-- QR Umum -->
+        <div class="bg-white text-black rounded-2xl p-4 flex flex-col items-center justify-between min-h-0">
+            <p class="font-bold text-gray-600 text-xs sm:text-sm uppercase tracking-widest shrink-0">Daftar Antrean — Umum</p>
+            <div id="qr-umum" class="flex justify-center items-center flex-1 min-h-0 py-3 px-3"></div>
+            <a id="link-umum" href="<?= APP_URL ?>/umum" target="_blank" rel="noopener"
+               class="block bg-emerald-700 text-white text-sm py-2.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
+        </div>
+
+    </div>
+
+    <!-- ROW 2: Rekap Kunjungan Hari Ini -->
+    <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 min-h-0">
+
+        <!-- Nomor Disabilitas -->
         <div class="bg-blue-800 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
-            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-blue-300 shrink-0">Antrean Disabilitas</p>
+            <p class="text-xs sm:text-sm font-bold uppercase tracking-widest text-blue-300 shrink-0">Antrean Disabilitas</p>
             <div class="flex-1 flex flex-col items-center justify-center min-h-0">
-                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="nomor-disabilitas"><?= htmlspecialchars($nomorDisabilitas) ?></div>
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl font-bold leading-none" id="nomor-disabilitas"><?= htmlspecialchars($nomorDisabilitas) ?></div>
                 <p class="text-xs text-blue-200 mt-1">sedang dipanggil</p>
             </div>
-            <p class="text-[9px] sm:text-xs text-blue-300 text-center shrink-0">
-                <span class="font-semibold" id="total-disabilitas"><?= $totals['disabilitas'] ?></span> orang mendaftar hari ini
+            <p class="text-xs text-blue-300 text-center shrink-0">
+                <span class="font-semibold" id="total-disabilitas"><?= $totals['disabilitas'] ?></span> mendaftar hari ini
             </p>
         </div>
 
-        <!-- Row 2 col 1 — QR Umum -->
-        <div class="bg-white text-black rounded-2xl p-3 flex flex-col items-center justify-between min-h-0">
-            <p class="font-bold text-gray-600 text-[9px] sm:text-[10px] uppercase tracking-widest shrink-0">Daftar Antrean — Umum</p>
-            <div id="qr-umum" class="flex justify-center my-1 flex-1 items-center min-h-0"></div>
-            <a id="link-umum" href="<?= APP_URL ?>/umum" target="_blank" rel="noopener"
-               class="block bg-emerald-700 text-white text-xs py-1.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
-        </div>
-
-        <!-- Row 2 col 2 — Nomor Umum -->
+        <!-- Nomor Umum -->
         <div class="bg-emerald-800 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
-            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-emerald-300 shrink-0">Antrean Umum</p>
+            <p class="text-xs sm:text-sm font-bold uppercase tracking-widest text-emerald-300 shrink-0">Antrean Umum</p>
             <div class="flex-1 flex flex-col items-center justify-center min-h-0">
-                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="nomor-umum"><?= htmlspecialchars($nomorUmum) ?></div>
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl font-bold leading-none" id="nomor-umum"><?= htmlspecialchars($nomorUmum) ?></div>
                 <p class="text-xs text-emerald-200 mt-1">sedang dipanggil</p>
             </div>
-            <p class="text-[9px] sm:text-xs text-emerald-300 text-center shrink-0">
-                <span class="font-semibold" id="total-umum"><?= $totals['umum'] ?></span> orang mendaftar hari ini
+            <p class="text-xs text-emerald-300 text-center shrink-0">
+                <span class="font-semibold" id="total-umum"><?= $totals['umum'] ?></span> mendaftar hari ini
             </p>
         </div>
 
-        <!-- Row 3 col 1 — WhatsApp -->
+        <!-- WhatsApp -->
         <div class="bg-green-700 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
-            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-green-200 shrink-0">Via WhatsApp</p>
+            <p class="text-xs sm:text-sm font-bold uppercase tracking-widest text-green-200 shrink-0">Via WhatsApp</p>
             <div class="flex-1 flex items-center justify-center min-h-0">
-                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="count-whatsapp"><?= $totals['whatsapp'] ?></div>
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl font-bold leading-none" id="count-whatsapp"><?= $totals['whatsapp'] ?></div>
             </div>
-            <p class="text-[9px] sm:text-xs text-green-300 text-center shrink-0">orang mendaftar hari ini</p>
+            <p class="text-xs text-green-300 text-center shrink-0">mendaftar hari ini</p>
         </div>
 
-        <!-- Row 3 col 2 — Surat -->
+        <!-- Surat -->
         <div class="bg-amber-700 rounded-2xl p-3 md:p-4 flex flex-col min-h-0">
-            <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-amber-200 shrink-0">Via Surat</p>
+            <p class="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-200 shrink-0">Surat</p>
             <div class="flex-1 flex items-center justify-center min-h-0">
-                <div class="stat-num text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none" id="count-surat"><?= $totals['surat'] ?></div>
+                <div class="stat-num text-5xl sm:text-6xl md:text-7xl font-bold leading-none" id="count-surat"><?= $totals['surat'] ?></div>
             </div>
-            <p class="text-[9px] sm:text-xs text-amber-300 text-center shrink-0">orang mendaftar hari ini</p>
+            <p class="text-xs text-amber-300 text-center shrink-0">mendaftar hari ini</p>
         </div>
 
     </div>
@@ -123,8 +135,13 @@
 
         // ── QR Codes ─────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', function() {
-            const isMd   = window.innerWidth >= 768;
-            const qrSize = isMd ? 130 : 100;
+            // Measure the QR section to size codes to fill available space
+            const section = document.getElementById('qr-section');
+            const rect    = section.getBoundingClientRect();
+            // card padding=16px×2, gap=8px, label~28px, button~42px, py-3~24px
+            const byH  = Math.floor(rect.height - 32 - 28 - 42 - 24);
+            const byW  = Math.floor(rect.width / 2 - 32 - 24); // card padding + px-3
+            const qrSize = Math.max(100, Math.min(byH, byW));
 
             new QRCode(document.getElementById('qr-disabilitas'), {
                 text: QR_URLS.disabilitas, width: qrSize, height: qrSize,

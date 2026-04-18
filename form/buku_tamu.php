@@ -174,8 +174,8 @@ function renderForm($jenis, $judul) {
                 </div>
 
                 <div>
-                    <label class="block mb-1 font-medium">Nomor HP <span class="text-red-500">*</span></label>
-                    <input id="telepon" name="telepon" required placeholder="08xxxxxxxxxx"
+                    <label class="block mb-1 font-medium">Nomor Telepon <span class="text-red-500">*</span></label>
+                    <input id="telepon" name="telepon" required placeholder="08xx / 0362xxxxxx"
                            value="<?= htmlspecialchars($old['telepon'] ?? '') ?>"
                            class="w-full border p-2 rounded">
                 </div>
