@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS `antrian` (
   `pemanfaatan_data`  VARCHAR(50),
   `data_dibutuhkan`   TEXT,
   `token`             VARCHAR(64) UNIQUE,
-  `token_pes`         VARCHAR(64) UNIQUE
+  `token_pes`         VARCHAR(64) UNIQUE,
+  `created_at`        DATETIME NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `penilaian` (
@@ -163,6 +164,11 @@ ALTER TABLE `penilaian_data_item`
 -- Tambah jenis 'surat' ke ENUM antrian
 ALTER TABLE `antrian`
   MODIFY COLUMN `jenis` ENUM('umum','disabilitas','whatsapp','surat');
+
+-- Tambah kolom created_at ke antrian (untuk jendela revisi 2 jam form whatsapp)
+-- (lewati jika sudah ada — error "Duplicate column name" aman diabaikan)
+ALTER TABLE `antrian`
+  ADD COLUMN `created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP;
 
 -- Tambah kolom link surat masuk
 -- (lewati jika sudah ada kolom link_surat — error "Duplicate column name" aman diabaikan)

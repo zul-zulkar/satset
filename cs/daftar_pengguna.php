@@ -736,30 +736,28 @@ function buildExpandDetail(tr, pData, isPST) {
 
     var hasPes = parseInt(tr.attr('data-pes-id') || 0) > 0;
 
-    // PES item
-    if (!hasPes) {
-        if (tokenPes) {
-            var pesUrl    = APP_URL + '/pes/?token=' + tokenPes;
-            var pesUrlEsc = escHtml(pesUrl);
-            row1 += "<span class='inline-flex rounded-md overflow-hidden text-xs border border-teal-200 items-stretch'>" +
-                      "<span class='bg-teal-50 text-teal-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
-                        "<i class='fas fa-clipboard-list text-teal-600 text-[10px]'></i>Form PES" +
-                      "</span>" +
-                      "<button onclick='tampilkanQR(\"" + pesUrlEsc + "\",\"" + nameEsc + "\")' " +
-                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='QR Code'>" +
-                        "<i class='fas fa-qrcode text-[10px]'></i></button>" +
-                      "<button onclick='salinLink(\"" + pesUrlEsc + "\",this)' " +
-                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Salin link'>" +
-                        "<i class='fas fa-copy text-[10px]'></i></button>" +
-                      "<a href='" + pesUrlEsc + "' target='_blank' " +
-                        "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Buka'>" +
-                        "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
-                    "</span>";
-        } else {
-            row1 += "<button id='pes-link-container-" + id + "' onclick='generateTokenPes(" + id + ",this)' " +
-                    "class='inline-flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
-                    "<i class='fas fa-link text-teal-500'></i> Buat Link PES</button>";
-        }
+    // PES item — jika belum ada PES, tampilkan form link di row1
+    if (tokenPes && !hasPes) {
+        var pesUrl    = APP_URL + '/pes/?token=' + tokenPes;
+        var pesUrlEsc = escHtml(pesUrl);
+        row1 += "<span class='inline-flex rounded-md overflow-hidden text-xs border border-teal-200 items-stretch'>" +
+                  "<span class='bg-teal-50 text-teal-800 px-2.5 py-1.5 flex items-center gap-1.5 font-semibold whitespace-nowrap'>" +
+                    "<i class='fas fa-clipboard-list text-teal-600 text-[10px]'></i>Form PES" +
+                  "</span>" +
+                  "<button onclick='tampilkanQR(\"" + pesUrlEsc + "\",\"" + nameEsc + "\")' " +
+                    "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='QR Code'>" +
+                    "<i class='fas fa-qrcode text-[10px]'></i></button>" +
+                  "<button onclick='salinLink(\"" + pesUrlEsc + "\",this)' " +
+                    "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Salin link'>" +
+                    "<i class='fas fa-copy text-[10px]'></i></button>" +
+                  "<a href='" + pesUrlEsc + "' target='_blank' " +
+                    "class='bg-teal-500 hover:bg-teal-600 text-white px-2 py-1.5 border-l border-teal-200 transition-colors' title='Buka'>" +
+                    "<i class='fas fa-external-link-alt text-[10px]'></i></a>" +
+                "</span>";
+    } else if (!tokenPes) {
+        row1 += "<button id='pes-link-container-" + id + "' onclick='generateTokenPes(" + id + ",this)' " +
+                "class='inline-flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                "<i class='fas fa-link text-teal-500'></i> Buat Link PES</button>";
     }
 
     // ── Row 2: admin buttons ──────────────────────────────────────────────────
@@ -769,15 +767,16 @@ function buildExpandDetail(tr, pData, isPST) {
         "<button class='inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' onclick='deleteUser(" + id + ")'>" +
         "<i class='fas fa-trash-alt'></i>Hapus</button>";
 
+    if (hasPes && tokenPes) {
+        var pesUrl2 = APP_URL + '/pes/?token=' + tokenPes;
+        row2 += "<a href='" + escHtml(pesUrl2) + "' target='_blank' " +
+                "class='inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+                "<i class='fas fa-clipboard-list'></i> Edit PES</a>";
+    }
     if (hasPenilaian) {
         row2 += "<button onclick='openPenilaianModal(" + id + ")' " +
                 "class='inline-flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
                 "<i class='fas fa-star'></i> Lihat Penilaian</button>";
-    }
-    if (hasPes && token) {
-        row2 += "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?token=" + encodeURIComponent(token) + "#section-pes' target='_blank' " +
-                "class='inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
-                "<i class='fas fa-clipboard-check'></i> Lihat PES</a>";
     }
     row2 += token
         ? "<a href='" + APP_BASE + "/cs/detail_pengunjung.php?token=" + encodeURIComponent(token) + "' target='_blank' " +

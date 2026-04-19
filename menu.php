@@ -223,6 +223,14 @@
                     <div class="text-teal-100 text-xs mt-1">Post Enumeration Survey — diisi petugas PST</div>
                 </button>
 
+                <button onclick="bukaModalSurat()" class="card text-left w-full rounded-2xl p-5
+                    bg-gradient-to-br from-amber-600 to-yellow-700
+                    border border-amber-500/30 cursor-pointer">
+                    <div class="icon-wrap text-4xl mb-3">📬</div>
+                    <div class="font-bold text-base sm:text-lg">Tindak Lanjut Surat</div>
+                    <div class="text-amber-100 text-xs mt-1">Surat belum lengkap penilaian / PES — salin link dari sini</div>
+                </button>
+
             </div>
         </section>
 
@@ -391,6 +399,44 @@
 
                 <!-- footer info -->
                 <div id="modal-footer-info" class="px-6 py-3 border-t border-slate-800 bg-slate-800/30 text-slate-500 text-xs"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODAL SURAT TINDAK LANJUT ── -->
+    <div id="modal-surat" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="tutupModalSurat()"></div>
+        <div class="relative z-10 flex items-start justify-center min-h-screen pt-10 px-4 pb-10">
+            <div class="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
+
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-gradient-to-r from-amber-600/20 to-yellow-600/20">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📬</span>
+                        <div>
+                            <div class="font-bold text-white text-base">Tindak Lanjut Pengunjung Surat</div>
+                            <div id="modal-surat-tanggal" class="text-amber-300 text-xs"></div>
+                        </div>
+                    </div>
+                    <button onclick="tutupModalSurat()" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 px-6 py-3 border-b border-slate-800 bg-slate-800/50">
+                    <label class="text-slate-400 text-xs font-semibold uppercase tracking-wide shrink-0">Periode</label>
+                    <input id="surat-filter-dari" type="date" class="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <span class="text-slate-500 text-xs shrink-0">s/d</span>
+                    <input id="surat-filter-sampai" type="date" class="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button onclick="muatDaftarSurat()" class="text-xs bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-1.5 rounded-lg transition shrink-0">Tampilkan</button>
+                    <label class="ml-auto flex items-center gap-2 text-slate-400 text-xs cursor-pointer select-none shrink-0">
+                        <input id="surat-filter-belum" type="checkbox" checked onchange="renderDaftarSurat()" class="accent-amber-500">
+                        Belum lengkap saja
+                    </label>
+                </div>
+
+                <div id="modal-surat-body" class="overflow-y-auto max-h-[55vh] px-6 py-4 space-y-2">
+                    <div class="text-slate-500 text-sm text-center py-8">Memuat data…</div>
+                </div>
+
+                <div id="modal-surat-footer" class="px-6 py-3 border-t border-slate-800 bg-slate-800/30 text-slate-500 text-xs"></div>
             </div>
         </div>
     </div>
@@ -566,10 +612,11 @@
             const res  = await fetch(APP_BASE_MENU + '/action/generate_token.php', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
-                // refresh baris
                 const idx = _surveiData.findIndex(r => parseInt(r.id) === parseInt(id));
                 if (idx !== -1) _surveiData[idx].token = json.token;
                 renderDaftarSurvei();
+                const idxS = _suratData.findIndex(r => parseInt(r.id) === parseInt(id));
+                if (idxS !== -1) { _suratData[idxS].token = json.token; renderDaftarSurat(); }
             } else {
                 btn.disabled = false;
                 btn.textContent = orig;
@@ -642,7 +689,7 @@
 
     // Tutup modal dengan Escape
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { tutupModalSurvei(); tutupModalPes(); tutupModalQr(); }
+        if (e.key === 'Escape') { tutupModalSurvei(); tutupModalPes(); tutupModalSurat(); tutupModalQr(); }
     });
 
     // ── Modal PES ────────────────────────────────────────────────────────
@@ -770,6 +817,159 @@
         document.getElementById('modal-pes-body').innerHTML = html;
     }
 
+    // ── Modal Surat Tindak Lanjut ────────────────────────────────────────────
+    let _suratData = [];
+
+    function bukaModalSurat() {
+        document.getElementById('modal-surat').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        const inpDari   = document.getElementById('surat-filter-dari');
+        const inpSampai = document.getElementById('surat-filter-sampai');
+        if (!inpDari.value && !inpSampai.value) {
+            const def = defaultRentang();
+            inpDari.value   = def.dari;
+            inpSampai.value = def.sampai;
+        }
+        muatDaftarSurat();
+    }
+
+    function tutupModalSurat() {
+        document.getElementById('modal-surat').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    async function muatDaftarSurat() {
+        const dari   = document.getElementById('surat-filter-dari').value;
+        const sampai = document.getElementById('surat-filter-sampai').value;
+        document.getElementById('modal-surat-tanggal').textContent =
+            (dari && sampai) ? `${formatTgl(dari)} — ${formatTgl(sampai)}` : '';
+        document.getElementById('modal-surat-body').innerHTML =
+            '<div class="text-slate-500 text-sm text-center py-8">Memuat data…</div>';
+        document.getElementById('modal-surat-footer').textContent = '';
+        try {
+            const params = new URLSearchParams();
+            if (dari)   params.set('dari',   dari);
+            if (sampai) params.set('sampai', sampai);
+            const res  = await fetch(APP_BASE_MENU + '/action/list_surat_tindak_lanjut.php?' + params, { cache: 'no-store' });
+            const json = await res.json();
+            if (json.error) {
+                document.getElementById('modal-surat-body').innerHTML =
+                    `<div class="text-red-400 text-sm text-center py-8">Error: ${escHtml(json.error)}</div>`;
+                return;
+            }
+            _suratData = json.data || [];
+            renderDaftarSurat();
+        } catch (e) {
+            document.getElementById('modal-surat-body').innerHTML =
+                `<div class="text-red-400 text-sm text-center py-8">Gagal memuat data.</div>`;
+        }
+    }
+
+    function renderDaftarSurat() {
+        const hanyaBelum = document.getElementById('surat-filter-belum').checked;
+        const list = hanyaBelum
+            ? _suratData.filter(r => !parseInt(r.sudah_penilaian) || !parseInt(r.sudah_pes))
+            : _suratData;
+
+        const total  = _suratData.length;
+        const lengkap = _suratData.filter(r => parseInt(r.sudah_penilaian) && parseInt(r.sudah_pes)).length;
+        document.getElementById('modal-surat-footer').textContent =
+            `Total surat: ${total} · Lengkap: ${lengkap} · Belum lengkap: ${total - lengkap}`;
+
+        if (list.length === 0) {
+            document.getElementById('modal-surat-body').innerHTML =
+                `<div class="text-slate-500 text-sm text-center py-8">${total === 0 ? 'Belum ada pengunjung surat pada periode ini.' : 'Semua pengunjung surat sudah lengkap.'}</div>`;
+            return;
+        }
+
+        const html = list.map(r => {
+            const tgl = r.tanggal ? `<span class="text-slate-500 text-xs">${formatTgl(r.tanggal)}</span>` : '';
+
+            // Penilaian
+            let penilaianHtml;
+            if (parseInt(r.sudah_penilaian)) {
+                penilaianHtml = `<span class="text-xs text-emerald-400 font-semibold whitespace-nowrap">✓ Penilaian</span>`;
+            } else if (r.token) {
+                const link = APP_URL_MENU + '/penilaian/?token=' + r.token;
+                penilaianHtml = `<span class="text-xs text-rose-400 font-semibold whitespace-nowrap">○ Penilaian</span>
+                    <button onclick="salinLinkAmber('${link}', this)"
+                        class="text-xs bg-amber-600 hover:bg-amber-500 text-white font-semibold px-2 py-1 rounded-lg transition whitespace-nowrap">
+                        Salin Link</button>`;
+            } else {
+                penilaianHtml = `<span class="text-xs text-rose-400 font-semibold whitespace-nowrap">○ Penilaian</span>
+                    <button onclick="generateToken(${r.id}, this)"
+                        class="text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold px-2 py-1 rounded-lg transition whitespace-nowrap">
+                        Buat Token</button>`;
+            }
+
+            // PES
+            let pesHtml;
+            if (parseInt(r.sudah_pes)) {
+                pesHtml = `<span class="text-xs text-emerald-400 font-semibold whitespace-nowrap">✓ PES</span>`;
+            } else if (r.token_pes) {
+                const link = APP_URL_MENU + '/pes/?token=' + r.token_pes;
+                pesHtml = `<span class="text-xs text-rose-400 font-semibold whitespace-nowrap">○ PES</span>
+                    <button onclick="salinLinkTeal('${link}', this)"
+                        class="text-xs bg-teal-600 hover:bg-teal-500 text-white font-semibold px-2 py-1 rounded-lg transition whitespace-nowrap">
+                        Salin Link</button>`;
+            } else {
+                pesHtml = `<span class="text-xs text-rose-400 font-semibold whitespace-nowrap">○ PES</span>
+                    <button onclick="generateTokenPes(${r.id}, this)"
+                        class="text-xs bg-slate-600 hover:bg-slate-500 text-white font-semibold px-2 py-1 rounded-lg transition whitespace-nowrap">
+                        Buat Token</button>`;
+            }
+
+            return `
+            <div class="bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-3 space-y-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-semibold text-white text-sm">${escHtml(r.nama)}</span>
+                    ${tgl}
+                </div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    ${penilaianHtml}
+                    <span class="text-slate-700">·</span>
+                    ${pesHtml}
+                </div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('modal-surat-body').innerHTML = html;
+    }
+
+    function salinLinkAmber(url, btn) {
+        const orig = btn.textContent;
+        const ok = () => {
+            btn.textContent = '✓ Disalin';
+            btn.classList.replace('bg-amber-600', 'bg-emerald-600');
+            btn.classList.remove('hover:bg-amber-500');
+            setTimeout(() => {
+                btn.textContent = orig;
+                btn.classList.replace('bg-emerald-600', 'bg-amber-600');
+                btn.classList.add('hover:bg-amber-500');
+            }, 1500);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(url).then(ok).catch(() => fallbackSalin(url, ok));
+        } else { fallbackSalin(url, ok); }
+    }
+
+    function salinLinkTeal(url, btn) {
+        const orig = btn.textContent;
+        const ok = () => {
+            btn.textContent = '✓ Disalin';
+            btn.classList.replace('bg-teal-600', 'bg-emerald-600');
+            btn.classList.remove('hover:bg-teal-500');
+            setTimeout(() => {
+                btn.textContent = orig;
+                btn.classList.replace('bg-emerald-600', 'bg-teal-600');
+                btn.classList.add('hover:bg-teal-500');
+            }, 1500);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(url).then(ok).catch(() => fallbackSalin(url, ok));
+        } else { fallbackSalin(url, ok); }
+    }
+
     async function generateTokenPes(id, btn) {
         const orig = btn.textContent;
         btn.disabled = true;
@@ -783,6 +983,8 @@
                 const idx = _pesData.findIndex(r => parseInt(r.id) === parseInt(id));
                 if (idx !== -1) _pesData[idx].token_pes = json.token;
                 renderDaftarPes();
+                const idxS = _suratData.findIndex(r => parseInt(r.id) === parseInt(id));
+                if (idxS !== -1) { _suratData[idxS].token_pes = json.token; renderDaftarSurat(); }
             } else {
                 btn.disabled = false;
                 btn.textContent = orig;
