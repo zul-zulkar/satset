@@ -30,6 +30,7 @@ $kelompok_umur = trim($_POST['kelompok_umur']    ?? '') ?: null;
 $pekerjaan     = trim($_POST['pekerjaan']        ?? '') ?: null;
 $pemanfaatan   = trim($_POST['pemanfaatan_data'] ?? '') ?: null;
 $data_dibutuhkan = trim($_POST['data_dibutuhkan'] ?? '') ?: null;
+$jenis_pelayanan    = trim($_POST['jenis_pelayanan']    ?? '') ?: null;
 $link_surat         = trim($_POST['link_surat']         ?? '') ?: null;
 $link_surat_balasan = trim($_POST['link_surat_balasan'] ?? '') ?: null;
 
@@ -49,16 +50,16 @@ $stmt = $mysqli->prepare(
         nama=?, email=?, telepon=?, instansi=?, jk=?, tanggal=?,
         jumlah_orang=?, keperluan=?, kunjungan_pst=?,
         pendidikan=?, kelompok_umur=?, pekerjaan=?,
-        pemanfaatan_data=?, data_dibutuhkan=?, link_surat=?
+        pemanfaatan_data=?, data_dibutuhkan=?, jenis_pelayanan=?, link_surat=?
      WHERE id=?"
 );
-// s×6, i, s, i, s×6, i  → 16 params
+// s×6, i, s, i, s×7, i  → 18 params
 $stmt->bind_param(
-    "ssssssisissssssi",
+    "ssssssisissssssssi",
     $nama, $email, $telepon, $instansi, $jk, $tanggal,
     $jumlah_orang, $keperluan, $kunjungan_pst,
     $pendidikan, $kelompok_umur, $pekerjaan,
-    $pemanfaatan, $data_dibutuhkan, $link_surat,
+    $pemanfaatan, $data_dibutuhkan, $jenis_pelayanan, $link_surat,
     $id
 );
 

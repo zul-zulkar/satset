@@ -65,7 +65,7 @@ $st = $mysqli->prepare("SELECT * FROM antrian WHERE tanggal BETWEEN ? AND ? ORDE
 $st->bind_param("ss", $firstDay, $lastDay); $st->execute();
 $allAntrian = $st->get_result()->fetch_all(MYSQLI_ASSOC); $st->close();
 
-$isPST = fn($r) => $r['jenis'] === 'whatsapp' || (!empty($r['kunjungan_pst']) && $r['kunjungan_pst'] == 1);
+$isPST = fn($r) => in_array($r['jenis'], ['whatsapp', 'surat']) || (!empty($r['kunjungan_pst']) && $r['kunjungan_pst'] == 1);
 $pstRows    = array_values(array_filter($allAntrian, $isPST));
 $nonPstRows = array_values(array_filter($allAntrian, fn($r) => !($isPST)($r)));
 

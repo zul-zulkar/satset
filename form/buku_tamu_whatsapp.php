@@ -39,15 +39,17 @@ function renderFormWhatsapp($judul) {
         $kelompok_umur = $_POST['kelompok_umur']        ?? '';
         $pekerjaan     = trim($_POST['pekerjaan']       ?? '');
         $instansi      = trim($_POST['instansi']        ?? '');
-        $pemanfaatan   = $_POST['pemanfaatan_data']     ?? '';
-        $dataNama      = $_POST['data_nama']            ?? [];
+        $pemanfaatan     = $_POST['pemanfaatan_data']     ?? '';
+        $jenis_pelayanan = $_POST['jenis_pelayanan']      ?? '';
+        $dataNama        = $_POST['data_nama']            ?? [];
         $tahunDari     = $_POST['tahun_dari']           ?? [];
         $tahunSampai   = $_POST['tahun_sampai']         ?? [];
 
-        $validJk          = ['L', 'P'];
-        $validPendidikan  = ['SLTA/Sederajat', 'D1/D2/D3', 'D4/S1', 'S2', 'S3'];
-        $validUmur        = ['di bawah 17 tahun', '17 - 25 tahun', '26 - 34 tahun', '35 - 44 tahun', '45 - 54 tahun', '55 - 65 tahun', 'di atas 65 tahun'];
-        $validPemanfaatan = ['Tugas Sekolah/Tugas Kuliah', 'Pemerintahan', 'Komersial', 'Penelitian', 'Lainnya'];
+        $validJk             = ['L', 'P'];
+        $validPendidikan     = ['SLTA/Sederajat', 'D1/D2/D3', 'D4/S1', 'S2', 'S3'];
+        $validUmur           = ['di bawah 17 tahun', '17 - 25 tahun', '26 - 34 tahun', '35 - 44 tahun', '45 - 54 tahun', '55 - 65 tahun', 'di atas 65 tahun'];
+        $validPemanfaatan    = ['Tugas Sekolah/Tugas Kuliah', 'Pemerintahan', 'Komersial', 'Penelitian', 'Lainnya'];
+        $validJenisPelayanan = ['Permintaan Data', 'Konsultasi Statistik', 'Rekomendasi Statistik'];
 
         if (!preg_match("/^[a-zA-Z'\s]+$/u", $nama)) {
             $errorMsg = "Nama hanya boleh berisi huruf, spasi, dan tanda petik satu (').";
@@ -67,6 +69,8 @@ function renderFormWhatsapp($judul) {
             $errorMsg = 'Instansi / organisasi wajib diisi.';
         } elseif (!in_array($pemanfaatan, $validPemanfaatan)) {
             $errorMsg = 'Pilih pemanfaatan hasil data.';
+        } elseif (!in_array($jenis_pelayanan, $validJenisPelayanan)) {
+            $errorMsg = 'Pilih jenis pelayanan.';
         } elseif (empty($dataNama) || count(array_filter(array_map('trim', $dataNama))) === 0) {
             $errorMsg = 'Tambahkan minimal 1 data yang dibutuhkan.';
         } else {
@@ -88,11 +92,11 @@ function renderFormWhatsapp($judul) {
                 } else {
                     $stU = $mysqli->prepare(
                         "UPDATE antrian SET nama=?, email=?, telepon=?, jk=?, pendidikan=?, kelompok_umur=?,
-                         pekerjaan=?, instansi=?, pemanfaatan_data=?, data_dibutuhkan=? WHERE token=?"
+                         pekerjaan=?, instansi=?, pemanfaatan_data=?, data_dibutuhkan=?, jenis_pelayanan=? WHERE token=?"
                     );
-                    $stU->bind_param("sssssssssss",
+                    $stU->bind_param("ssssssssssss",
                         $nama, $email, $telepon, $jk, $pendidikan, $kelompok_umur,
-                        $pekerjaan, $instansi, $pemanfaatan, $dataJson, $token
+                        $pekerjaan, $instansi, $pemanfaatan, $dataJson, $jenis_pelayanan, $token
                     );
                     if ($stU->execute()) {
                         $stU->close();
@@ -114,16 +118,16 @@ function renderFormWhatsapp($judul) {
                 $stmt = $mysqli->prepare(
                     "INSERT INTO antrian
                         (nama, email, telepon, jk, pendidikan, kelompok_umur,
-                         pekerjaan, instansi, pemanfaatan_data, data_dibutuhkan,
+                         pekerjaan, instansi, pemanfaatan_data, data_dibutuhkan, jenis_pelayanan,
                          kunjungan_pst, jenis, nomor, tanggal, token)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'whatsapp', ?, ?, ?)"
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'whatsapp', ?, ?, ?)"
                 );
                 $stmt->bind_param(
-                    "ssssssssssiss",
+                    "sssssssssssiss",
                     $nama, $email, $telepon,
                     $jk, $pendidikan, $kelompok_umur,
                     $pekerjaan, $instansi,
-                    $pemanfaatan, $dataJson,
+                    $pemanfaatan, $dataJson, $jenis_pelayanan,
                     $nomor_baru, $tanggal, $newToken
                 );
                 if ($stmt->execute()) {
@@ -151,6 +155,7 @@ function renderFormWhatsapp($judul) {
         $old['instansi']         = $antrian['instansi'];
         $old['pemanfaatan_data'] = $antrian['pemanfaatan_data'];
         $old['pekerjaan']        = $antrian['pekerjaan'];
+        $old['jenis_pelayanan']  = $antrian['jenis_pelayanan'] ?? '';
 
         $stdOpts = ['Pelajar/Mahasiswa', 'Peneliti/Dosen', 'ASN/TNI/Polri', 'Pegawai BUMN/BUMD', 'Pegawai Swasta', 'Wiraswasta'];
         $pekerjaanVal = $antrian['pekerjaan'] ?? '';
@@ -173,6 +178,7 @@ function renderFormWhatsapp($judul) {
     $oldDataNama            = $old['data_nama']               ?? [];
     $oldTahunDari           = $old['tahun_dari']              ?? [];
     $oldTahunSampai         = $old['tahun_sampai']            ?? [];
+    $oldJenisPelayanan      = $old['jenis_pelayanan']         ?? '';
     ?>
     <!DOCTYPE html>
     <html lang="id">
@@ -197,6 +203,12 @@ function renderFormWhatsapp($judul) {
             $deadlineTs = $createdAt ? ($createdAt + 7200) : 0;
             $dataItemsP = json_decode($antrian['data_dibutuhkan'] ?? '[]', true) ?: [];
             $jkLabel    = $antrian['jk'] === 'L' ? 'Laki-laki' : 'Perempuan';
+            $jpDataLabels = [
+                'Permintaan Data'      => 'Data yang Dibutuhkan',
+                'Konsultasi Statistik' => 'Statistik yang Dikonsultasikan',
+                'Rekomendasi Statistik'=> 'Kegiatan Statistik yang Akan Dilaksanakan',
+            ];
+            $dataPreviewLabel = $jpDataLabels[$antrian['jenis_pelayanan'] ?? ''] ?? 'Data yang Dibutuhkan';
             ?>
 
             <div class="mb-5 p-4 bg-green-50 border border-green-300 rounded-lg text-center">
@@ -229,6 +241,7 @@ function renderFormWhatsapp($judul) {
                     'Pekerjaan'              => $antrian['pekerjaan'],
                     'Instansi / Organisasi'  => $antrian['instansi'],
                     'Pemanfaatan Data'       => $antrian['pemanfaatan_data'],
+                    'Jenis Pelayanan'        => $antrian['jenis_pelayanan'],
                 ];
                 foreach ($rows as $label => $value): ?>
                     <div class="flex gap-2">
@@ -238,7 +251,7 @@ function renderFormWhatsapp($judul) {
                 <?php endforeach; ?>
 
                 <div class="flex gap-2 items-start">
-                    <span class="text-gray-500 w-44 flex-shrink-0">Data yang Dibutuhkan</span>
+                    <span class="text-gray-500 w-44 flex-shrink-0"><?= htmlspecialchars($dataPreviewLabel) ?></span>
                     <div>
                         <?php if (empty($dataItemsP)): ?>
                             <span class="font-medium text-gray-800">-</span>
@@ -428,9 +441,23 @@ function renderFormWhatsapp($judul) {
                     </div>
                 </div>
 
-                <!-- 10. Data yang Dibutuhkan -->
+                <!-- 10. Jenis Pelayanan -->
                 <div>
-                    <label class="block mb-1 font-semibold">Data yang Dibutuhkan <span class="text-red-500">*</span></label>
+                    <label class="block mb-2 font-semibold">Jenis Pelayanan <span class="text-red-500">*</span></label>
+                    <div>
+                        <?php foreach (['Permintaan Data', 'Konsultasi Statistik', 'Rekomendasi Statistik'] as $jp): ?>
+                            <label class="radio-label">
+                                <input type="radio" name="jenis_pelayanan" value="<?= $jp ?>"
+                                       <?= $oldJenisPelayanan === $jp ? 'checked' : '' ?>>
+                                <?= $jp ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 11. Data yang Dibutuhkan -->
+                <div>
+                    <label class="block mb-1 font-semibold"><span id="data-section-label">Data yang Dibutuhkan</span> <span class="text-red-500">*</span></label>
                     <p class="text-gray-500 text-xs mb-3">Tambahkan satu atau lebih data yang Anda butuhkan beserta rentang tahunnya.</p>
                     <div id="data-container" class="space-y-3"></div>
                     <button type="button" id="btn-tambah-data"
@@ -464,6 +491,31 @@ function renderFormWhatsapp($judul) {
                 });
             });
 
+            // ── Jenis Pelayanan — label dinamis ──────────────────────────────
+            var _jpLabels = {
+                'Permintaan Data':       {big: 'Data yang Dibutuhkan',                      small: 'Data yang dibutuhkan'},
+                'Konsultasi Statistik':  {big: 'Statistik yang Dikonsultasikan',            small: 'Statistik yang dikonsultasikan'},
+                'Rekomendasi Statistik': {big: 'Kegiatan Statistik yang Akan Dilaksanakan', small: 'Kegiatan Statistik yang akan dilaksanakan'}
+            };
+
+            function currentJpLabel() {
+                var el = document.querySelector('input[name="jenis_pelayanan"]:checked');
+                return _jpLabels[el ? el.value : ''] || _jpLabels['Permintaan Data'];
+            }
+
+            function refreshDataLabels() {
+                var lbl = currentJpLabel();
+                var sec = document.getElementById('data-section-label');
+                if (sec) sec.textContent = lbl.big;
+                document.querySelectorAll('.data-row-label').forEach(function(el) {
+                    el.textContent = lbl.small;
+                });
+            }
+
+            document.querySelectorAll('input[name="jenis_pelayanan"]').forEach(function(r) {
+                r.addEventListener('change', refreshDataLabels);
+            });
+
             // ── Data yang Dibutuhkan ──────────────────────────────────────────
             const container = document.getElementById('data-container');
 
@@ -475,6 +527,7 @@ function renderFormWhatsapp($judul) {
 
             function createRecord(data, dari, sampai) {
                 data = data || ''; dari = dari || ''; sampai = sampai || '';
+                var lbl = currentJpLabel().small;
                 var div = document.createElement('div');
                 div.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50 relative';
                 div.innerHTML =
@@ -482,7 +535,7 @@ function renderFormWhatsapp($judul) {
                     '        class="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-xl leading-none" ' +
                     '        title="Hapus baris ini">&times;</button>' +
                     '<div class="mb-2">' +
-                    '  <label class="block text-xs text-gray-600 mb-1 font-medium">Data yang dibutuhkan</label>' +
+                    '  <label class="block text-xs text-gray-600 mb-1 font-medium data-row-label">' + escHtml(lbl) + '</label>' +
                     '  <input type="text" name="data_nama[]" required ' +
                     '         placeholder="Contoh: Data jumlah penduduk" ' +
                     '         value="' + escHtml(data) + '" ' +
@@ -529,6 +582,7 @@ function renderFormWhatsapp($judul) {
                 endfor;
             }
             ?>
+            refreshDataLabels();
 
             // ── Form Validation ───────────────────────────────────────────────
             document.getElementById('formWa').addEventListener('submit', function(e) {
@@ -579,6 +633,9 @@ function renderFormWhatsapp($judul) {
                 }
                 if (!document.querySelector('input[name="pemanfaatan_data"]:checked')) {
                     alert('Pilih pemanfaatan hasil data.'); e.preventDefault(); return;
+                }
+                if (!document.querySelector('input[name="jenis_pelayanan"]:checked')) {
+                    alert('Pilih jenis pelayanan.'); e.preventDefault(); return;
                 }
 
                 var dataNamas = document.querySelectorAll('input[name="data_nama[]"]');

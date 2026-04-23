@@ -165,7 +165,8 @@ $jenisMeta = [
                 data-pemanfaatan-data="<?= htmlspecialchars($row['pemanfaatan_data'] ?? '') ?>"
                 data-data-dibutuhkan="<?= htmlspecialchars($row['data_dibutuhkan'] ?? '') ?>"
                 data-link-surat="<?= htmlspecialchars($row['link_surat'] ?? '') ?>"
-                data-link-surat-balasan="<?= htmlspecialchars($row['link_surat_balasan'] ?? '') ?>">
+                data-link-surat-balasan="<?= htmlspecialchars($row['link_surat_balasan'] ?? '') ?>"
+                data-jenis-pelayanan="<?= htmlspecialchars($row['jenis_pelayanan'] ?? '') ?>">
                 <td class="border p-2 text-center expand-toggle" style="cursor:pointer;width:40px"><span class="expand-icon">▶</span></td>
                 <td class="border p-2 text-center">
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border <?= $meta['badge'] ?>">
@@ -209,6 +210,7 @@ $jenisMeta = [
                     <th class="border p-2">Tanggal</th>
                     <th class="border p-2">Nama</th>
                     <th class="border p-2">Email</th>
+                    <th class="border p-2">Jenis Pelayanan</th>
                     <th class="border p-2 text-center">Penilaian</th>
                     <th class="border p-2 text-center">PES</th>
                 </tr>
@@ -218,6 +220,7 @@ $jenisMeta = [
                     <th><input type="text" placeholder="Cari Tanggal" class="w-full p-1 border text-xs"></th>
                     <th><input type="text" placeholder="Cari Nama" class="w-full p-1 border text-xs"></th>
                     <th><input type="text" placeholder="Cari Email" class="w-full p-1 border text-xs"></th>
+                    <th><input type="text" placeholder="Cari Jenis Pelayanan" class="w-full p-1 border text-xs"></th>
                     <th><input type="text" placeholder="Sudah / Belum" class="w-full p-1 border text-xs"></th>
                     <th><input type="text" placeholder="Sudah / Belum" class="w-full p-1 border text-xs"></th>
                 </tr>
@@ -251,7 +254,8 @@ $jenisMeta = [
                 data-pemanfaatan-data="<?= htmlspecialchars($row['pemanfaatan_data'] ?? '') ?>"
                 data-data-dibutuhkan="<?= htmlspecialchars($row['data_dibutuhkan'] ?? '') ?>"
                 data-link-surat="<?= htmlspecialchars($row['link_surat'] ?? '') ?>"
-                data-link-surat-balasan="<?= htmlspecialchars($row['link_surat_balasan'] ?? '') ?>">
+                data-link-surat-balasan="<?= htmlspecialchars($row['link_surat_balasan'] ?? '') ?>"
+                data-jenis-pelayanan="<?= htmlspecialchars($row['jenis_pelayanan'] ?? '') ?>">
                 <td class="border p-2 text-center expand-toggle" style="cursor:pointer;width:40px"><span class="expand-icon">▶</span></td>
                 <td class="border p-2 text-center"><input type="checkbox" class="select-pst" data-id="<?= $row['id'] ?>"></td>
                 <td class="border p-2 text-center">
@@ -263,6 +267,7 @@ $jenisMeta = [
                 <td class="border p-2"><?= htmlspecialchars($row['tanggal']) ?></td>
                 <td class="border p-2"><?= htmlspecialchars($row['nama']) ?></td>
                 <td class="border p-2"><?= htmlspecialchars($row['email'] ?? '') ?></td>
+                <td class="border p-2 text-xs"><?= htmlspecialchars($row['jenis_pelayanan'] ?? '') ?></td>
                 <td class="border p-2 text-center">
                     <?php if ($hasPenilaian): ?>
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
@@ -423,6 +428,23 @@ $jenisMeta = [
                         <option>Tugas Sekolah/Tugas Kuliah</option><option>Pemerintahan</option>
                         <option>Komersial</option><option>Penelitian</option><option>Lainnya</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium text-gray-700">Jenis Pelayanan</label>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="edit-jenis-pelayanan" value="Permintaan Data" class="accent-blue-500">
+                            <span class="text-xs">Permintaan Data</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="edit-jenis-pelayanan" value="Konsultasi Statistik" class="accent-blue-500">
+                            <span class="text-xs">Konsultasi Statistik</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="edit-jenis-pelayanan" value="Rekomendasi Statistik" class="accent-blue-500">
+                            <span class="text-xs">Rekomendasi Statistik</span>
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <label class="block mb-1 font-medium text-gray-700">Data yang Dibutuhkan</label>
@@ -659,8 +681,9 @@ function buildExpandDetail(tr, pData, isPST) {
     var token        = tr.attr('data-token')     || '';
     var tokenPes     = tr.attr('data-token-pes') || '';
     var hasPenilaian = pData && pData.found;
-    var jumlah       = tr.data('jumlah-orang') || '1';
-    var keperluan    = tr.data('keperluan')    || '-';
+    var jumlah         = tr.data('jumlah-orang')     || '1';
+    var keperluan      = tr.data('keperluan')        || '-';
+    var jenisPelayanan = tr.attr('data-jenis-pelayanan') || '';
 
     // Cek jendela revisi 24 jam dari submitted_at
     var canRevise = false;
@@ -790,6 +813,7 @@ function buildExpandDetail(tr, pData, isPST) {
         field('Jenis Kelamin', jk) + field('Telepon', telepon) +
         field('Instansi / Organisasi', instansi) + field('Email', email) +
         field('Jumlah Pengunjung', jumlah) +
+        (jenisPelayanan ? field('Jenis Pelayanan', jenisPelayanan) : '') +
         field('Keperluan', keperluan, 'sm:col-span-2 md:col-span-3') +
         "</div>" +
         "<div class='flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-200'>" + row1 + "</div>" +
@@ -969,12 +993,12 @@ $(document).ready(function() {
         columnDefs: [{ orderable: false, targets: [0] }]
     });
 
-    // Tab 2: 8 cols (expand, checkbox, jenis, tanggal, nama, email, penilaian, pes)
+    // Tab 2: 9 cols (expand, checkbox, jenis, tanggal, nama, email, jenis_pelayanan, penilaian, pes)
     tablePST = $('#pstTable').DataTable({
         pageLength: 25,
         order: [[3, 'desc']],
         autoWidth: false,
-        columnDefs: [{ orderable: false, targets: [0, 1, 6, 7] }]
+        columnDefs: [{ orderable: false, targets: [0, 1, 7, 8] }]
     });
 
     function bindFilters(tableInst) {
@@ -1126,6 +1150,11 @@ function openEditModal(tr) {
         document.getElementById('edit-kelompok-umur').value  = tr.data('kelompok-umur')  || '';
         document.getElementById('edit-pemanfaatan').value    = tr.data('pemanfaatan-data')|| '';
 
+        var jpVal = tr.attr('data-jenis-pelayanan') || '';
+        document.querySelectorAll('input[name="edit-jenis-pelayanan"]').forEach(function(r) {
+            r.checked = r.value === jpVal;
+        });
+
         // Pekerjaan
         var pekerjaan = tr.data('pekerjaan') || '';
         var selPek = document.getElementById('edit-pekerjaan-select');
@@ -1228,6 +1257,10 @@ function submitEditModal() {
                         })(),
         pemanfaatan_data: document.getElementById('edit-pemanfaatan').value,
         data_dibutuhkan:  dataDibutuhkan || '',
+        jenis_pelayanan:  (function() {
+            var r = document.querySelector('input[name="edit-jenis-pelayanan"]:checked');
+            return r ? r.value : '';
+        })(),
         link_surat:         document.getElementById('edit-link-surat').value.trim(),
         link_surat_balasan: document.getElementById('edit-link-surat-balasan').value.trim(),
     };

@@ -19,6 +19,7 @@ function renderForm($jenis, $judul) {
                          '35 - 44 tahun', '45 - 54 tahun', '55 - 65 tahun', 'di atas 65 tahun'];
     $validPemanfaatan = ['Tugas Sekolah/Tugas Kuliah', 'Pemerintahan',
                          'Komersial', 'Penelitian', 'Lainnya'];
+    $validJenisPelayanan = ['Permintaan Data', 'Konsultasi Statistik', 'Rekomendasi Statistik'];
     $pekerjaanOptions = ['Pelajar/Mahasiswa', 'Peneliti/Dosen', 'ASN/TNI/Polri',
                          'Pegawai BUMN/BUMD', 'Pegawai Swasta', 'Wiraswasta', 'Lainnya'];
 
@@ -42,7 +43,7 @@ function renderForm($jenis, $judul) {
                 $errorMsg = 'Pilih keperluan kunjungan Anda.';
             } else {
                 $kunjungan_pst = intval($kpVal);
-                $keperluan     = $kunjungan_pst ? 'Permintaan Data' : trim($_POST['keperluan'] ?? '');
+                $keperluan     = $kunjungan_pst ? 'Pelayanan Statistik Terpadu' : trim($_POST['keperluan'] ?? '');
                 if (!$kunjungan_pst && $keperluan === '') {
                     $errorMsg = 'Jelaskan keperluan kunjungan Anda.';
                 }
@@ -50,16 +51,18 @@ function renderForm($jenis, $judul) {
         }
 
         // ── Validasi PST tambahan ──────────────────────────────────────
-        $pendidikan    = null;
-        $kelompok_umur = null;
-        $pekerjaan     = null;
-        $pemanfaatan   = null;
-        $dataJson      = null;
+        $pendidikan      = null;
+        $kelompok_umur   = null;
+        $pekerjaan       = null;
+        $pemanfaatan     = null;
+        $dataJson        = null;
+        $jenis_pelayanan = null;
 
         if ($errorMsg === '' && ($kunjungan_pst ?? 0) === 1) {
-            $pendidikan    = $_POST['pendidikan']       ?? '';
-            $kelompok_umur = $_POST['kelompok_umur']    ?? '';
-            $pemanfaatan   = $_POST['pemanfaatan_data'] ?? '';
+            $pendidikan      = $_POST['pendidikan']       ?? '';
+            $kelompok_umur   = $_POST['kelompok_umur']    ?? '';
+            $pemanfaatan     = $_POST['pemanfaatan_data'] ?? '';
+            $jenis_pelayanan = $_POST['jenis_pelayanan']  ?? '';
             $pkPilihan     = $_POST['pekerjaan_pilihan'] ?? '';
             $pekerjaan     = $pkPilihan === 'Lainnya'
                            ? trim($_POST['pekerjaan_lainnya_text'] ?? '')
@@ -68,7 +71,9 @@ function renderForm($jenis, $judul) {
             $tahunDari     = $_POST['tahun_dari']   ?? [];
             $tahunSampai   = $_POST['tahun_sampai'] ?? [];
 
-            if (!in_array($pendidikan, $validPendidikan)) {
+            if (!in_array($jenis_pelayanan, $validJenisPelayanan)) {
+                $errorMsg = 'Pilih jenis pelayanan.';
+            } elseif (!in_array($pendidikan, $validPendidikan)) {
                 $errorMsg = 'Pilih pendidikan tertinggi.';
             } elseif (!in_array($kelompok_umur, $validUmur)) {
                 $errorMsg = 'Pilih kelompok umur.';
@@ -108,16 +113,16 @@ function renderForm($jenis, $judul) {
                 "INSERT INTO antrian
                     (nama, email, telepon, instansi, jk, jumlah_orang, keperluan,
                      kunjungan_pst, pendidikan, kelompok_umur, pekerjaan,
-                     pemanfaatan_data, data_dibutuhkan,
+                     pemanfaatan_data, data_dibutuhkan, jenis_pelayanan,
                      jenis, nomor, tanggal, status, token)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', ?)"
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', ?)"
             );
             $stmt->bind_param(
-                "sssssisissssssiss",
+                "sssssisisssssssiss",
                 $_POST['nama'], $_POST['email'], $_POST['telepon'], $_POST['instansi'],
                 $_POST['jk'], $jumlah, $keperluan,
                 $kunjungan_pst, $pendidikan, $kelompok_umur, $pekerjaan,
-                $pemanfaatan, $dataJson,
+                $pemanfaatan, $dataJson, $jenis_pelayanan,
                 $jenis, $nomor_baru, $tanggal, $token
             );
             $stmt->execute();
@@ -133,6 +138,7 @@ function renderForm($jenis, $judul) {
     $oldTahunDari            = $old['tahun_dari']              ?? [];
     $oldTahunSampai          = $old['tahun_sampai']            ?? [];
     $isPST                   = ($old['keperluan_pst'] ?? '') === '1';
+    $oldJenisPelayanan       = $old['jenis_pelayanan']         ?? '';
     ?>
     <!DOCTYPE html>
     <html lang="id">
@@ -203,7 +209,7 @@ function renderForm($jenis, $judul) {
                         <label class="radio-label">
                             <input type="radio" name="keperluan_pst" value="1" id="kep_ya"
                                    <?= $isPST ? 'checked' : '' ?>>
-                            <span>Permintaan Data</span>
+                            <span>Pelayanan Statistik Terpadu</span>
                         </label>
                         <label class="radio-label">
                             <input type="radio" name="keperluan_pst" value="0" id="kep_tidak"
@@ -221,6 +227,20 @@ function renderForm($jenis, $judul) {
                 <!-- ── BAGIAN PST (tampil saat Permintaan Data dipilih) ── -->
                 <div id="pst-fields" class="<?= $isPST ? '' : 'hidden' ?> space-y-4 border-t border-blue-100 pt-4">
                     <p class="text-xs text-blue-600 font-semibold uppercase tracking-wide">Data Kunjungan PST</p>
+
+                    <!-- Jenis Pelayanan -->
+                    <div>
+                        <label class="block mb-1 font-medium">Jenis Pelayanan <span class="text-red-500">*</span></label>
+                        <div>
+                            <?php foreach ($validJenisPelayanan as $jp): ?>
+                                <label class="radio-label">
+                                    <input type="radio" name="jenis_pelayanan" value="<?= $jp ?>"
+                                           <?= $oldJenisPelayanan === $jp ? 'checked' : '' ?>>
+                                    <?= $jp ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
 
                     <!-- Email (khusus PST) -->
                     <div>
@@ -295,7 +315,7 @@ function renderForm($jenis, $judul) {
 
                     <!-- Data yang Dibutuhkan -->
                     <div>
-                        <label class="block mb-1 font-medium">Data yang Dibutuhkan <span class="text-red-500">*</span></label>
+                        <label class="block mb-1 font-medium"><span id="data-section-label">Data yang Dibutuhkan</span> <span class="text-red-500">*</span></label>
                         <p class="text-gray-500 text-xs mb-3">Tambahkan satu atau lebih data beserta rentang tahunnya.</p>
                         <div id="data-container" class="space-y-3"></div>
                         <button type="button" id="btn-tambah-data"
@@ -344,6 +364,31 @@ function renderForm($jenis, $judul) {
                 });
             });
 
+            // ── Jenis Pelayanan — label dinamis ───────────────────────────
+            var _jpLabels = {
+                'Permintaan Data':       {big: 'Data yang Dibutuhkan',                          small: 'Data yang dibutuhkan'},
+                'Konsultasi Statistik':  {big: 'Statistik yang Dikonsultasikan',                small: 'Statistik yang dikonsultasikan'},
+                'Rekomendasi Statistik': {big: 'Kegiatan Statistik yang Akan Dilaksanakan',     small: 'Kegiatan Statistik yang akan dilaksanakan'}
+            };
+
+            function currentJpLabel() {
+                var el = document.querySelector('input[name="jenis_pelayanan"]:checked');
+                return _jpLabels[el ? el.value : ''] || _jpLabels['Permintaan Data'];
+            }
+
+            function refreshDataLabels() {
+                var lbl = currentJpLabel();
+                var sec = document.getElementById('data-section-label');
+                if (sec) sec.textContent = lbl.big;
+                document.querySelectorAll('.data-row-label').forEach(function(el) {
+                    el.textContent = lbl.small;
+                });
+            }
+
+            document.querySelectorAll('input[name="jenis_pelayanan"]').forEach(function(r) {
+                r.addEventListener('change', refreshDataLabels);
+            });
+
             // ── Data yang Dibutuhkan — baris dinamis ──────────────────────
             var container = document.getElementById('data-container');
 
@@ -353,13 +398,14 @@ function renderForm($jenis, $judul) {
             }
 
             function createRecord(data, dari, sampai) {
+                var lbl = currentJpLabel().small;
                 var div = document.createElement('div');
                 div.className = 'record-row border border-gray-200 rounded-lg p-4 bg-gray-50 relative';
                 div.innerHTML =
                     '<button type="button" onclick="removeRecord(this)"' +
                     ' class="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>' +
                     '<div class="mb-2">' +
-                    '  <label class="block text-xs text-gray-600 mb-1 font-medium">Data yang dibutuhkan</label>' +
+                    '  <label class="block text-xs text-gray-600 mb-1 font-medium data-row-label">' + escHtml(lbl) + '</label>' +
                     '  <input type="text" name="data_nama[]" placeholder="Contoh: Jumlah penduduk"' +
                     '         value="' + escHtml(data||'') + '"' +
                     '         class="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">' +
@@ -399,6 +445,7 @@ function renderForm($jenis, $judul) {
                 }
             }
             ?>
+            refreshDataLabels();
 
             // ── Validasi submit ───────────────────────────────────────────
             document.getElementById('formLangsung').addEventListener('submit', function(e) {
@@ -422,6 +469,9 @@ function renderForm($jenis, $judul) {
                     }
                 }
                 if (kepPST.value === '1') {
+                    if (!document.querySelector('input[name="jenis_pelayanan"]:checked')) {
+                        alert('Pilih jenis pelayanan.'); e.preventDefault(); return;
+                    }
                     var email = document.getElementById('email').value.trim();
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                         alert('Format email tidak valid.'); document.getElementById('email').focus(); e.preventDefault(); return;

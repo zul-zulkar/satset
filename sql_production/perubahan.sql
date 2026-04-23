@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS `antrian` (
   `pekerjaan`         VARCHAR(255),
   `pemanfaatan_data`  VARCHAR(50),
   `data_dibutuhkan`   TEXT,
+  `jenis_pelayanan`   VARCHAR(50) NULL,
   `token`             VARCHAR(64) UNIQUE,
   `token_pes`         VARCHAR(64) UNIQUE,
   `created_at`        DATETIME NULL DEFAULT CURRENT_TIMESTAMP
@@ -174,6 +175,11 @@ ALTER TABLE `antrian`
 -- (lewati jika sudah ada kolom link_surat — error "Duplicate column name" aman diabaikan)
 ALTER TABLE `antrian`
   ADD COLUMN `link_surat` VARCHAR(500) NULL;
+
+-- Tambah kolom jenis pelayanan PST (Permintaan Data / Konsultasi / Rekomendasi Statistik)
+-- (lewati jika sudah ada — error "Duplicate column name" aman diabaikan)
+ALTER TABLE `antrian`
+  ADD COLUMN `jenis_pelayanan` VARCHAR(50) NULL AFTER `data_dibutuhkan`;
 
 -- Tambah kolom link surat balasan ke tabel pes
 -- (lewati jika sudah ada — error "Duplicate column name" aman diabaikan)
