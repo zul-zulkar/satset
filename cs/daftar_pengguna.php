@@ -64,14 +64,14 @@ $jenisMeta = [
 
     <!-- Filter & Export -->
     <form method="GET" class="flex flex-wrap items-center gap-2 mb-5">
-        <select name="bulan" class="border p-2 text-sm rounded flex-1 min-w-[110px]">
+        <select name="bulan" class="border p-2 text-sm rounded flex-1 min-w-[110px]" onchange="this.form.submit()">
             <?php for ($i = 1; $i <= 12; $i++):
                 $val = str_pad($i, 2, '0', STR_PAD_LEFT);
                 $selected = ($val == $bulan) ? 'selected' : '';
                 echo "<option value='$val' $selected>" . date('F', mktime(0,0,0,$i,1)) . "</option>";
             endfor; ?>
         </select>
-        <select name="tahun" class="border p-2 text-sm rounded flex-1 min-w-[80px]">
+        <select name="tahun" class="border p-2 text-sm rounded flex-1 min-w-[80px]" onchange="this.form.submit()">
             <?php $currentYear = date('Y');
             for ($i = $currentYear; $i >= $currentYear - 5; $i--):
                 $selected = ($i == $tahun) ? 'selected' : '';

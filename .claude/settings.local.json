@@ -21,7 +21,10 @@
       "Bash(python3 -c \"import sys,xml.dom.minidom; print\\(xml.dom.minidom.parseString\\(sys.stdin.read\\(\\)\\).toprettyxml\\(indent=' '\\)\\)\")",
       "Bash(unzip -p kop_bps.docx word/_rels/document.xml.rels)",
       "Bash(grep -v '^$')",
-      "Bash(php -r ' *)"
+      "Bash(php -r ' *)",
+      "Bash(where composer *)",
+      "Read(//c/xampp/php/**)",
+      "Read(//c/ProgramData/ComposerSetup/**)"
     ]
   }
 }
