@@ -53,19 +53,31 @@
     <div id="qr-section" class="flex-[3] grid grid-cols-2 gap-3 md:gap-4 min-h-0">
 
         <!-- QR Disabilitas -->
-        <div class="bg-white text-black rounded-2xl p-4 flex flex-col items-center justify-between min-h-0">
-            <p class="font-bold text-gray-600 text-xs sm:text-sm uppercase tracking-widest shrink-0">Daftar Antrean — Disabilitas</p>
-            <div id="qr-disabilitas" class="flex justify-center items-center flex-1 min-h-0 py-3 px-3"></div>
-            <a id="link-disabilitas" href="<?= APP_URL ?>/disabilitas" target="_blank" rel="noopener"
-               class="block bg-blue-700 text-white text-sm py-2.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
+        <div class="bg-white rounded-2xl overflow-hidden flex flex-col items-center min-h-0 border-4 border-blue-600">
+            <!-- Header band biru -->
+            <div class="w-full bg-blue-600 text-white flex items-center justify-center py-3 px-4 shrink-0 gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 sm:w-10 sm:h-10 shrink-0 opacity-90" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4" r="2"/><path d="M10 7a2 2 0 0 0-2 2v4l-2 4h2l1.5-3H12v3h2v-4h-2V9h4V7h-6z"/><path d="M15.5 15a4.5 4.5 0 1 1-5.83 4.33l-1.94.52A6.5 6.5 0 1 0 17.4 14.1l-.5 1.86A4.47 4.47 0 0 1 15.5 15z"/></svg>
+                <p class="font-black text-2xl sm:text-3xl md:text-4xl uppercase tracking-wide leading-none">Disabilitas</p>
+            </div>
+            <div id="qr-disabilitas" class="flex justify-center items-center flex-1 min-h-0 py-2 px-3"></div>
+            <div class="w-full p-3 shrink-0">
+                <a id="link-disabilitas" href="<?= APP_URL ?>/disabilitas" target="_blank" rel="noopener"
+                   class="block bg-blue-600 text-white text-sm py-2.5 rounded-xl font-semibold w-full text-center">Buka Link Pendaftaran</a>
+            </div>
         </div>
 
         <!-- QR Umum -->
-        <div class="bg-white text-black rounded-2xl p-4 flex flex-col items-center justify-between min-h-0">
-            <p class="font-bold text-gray-600 text-xs sm:text-sm uppercase tracking-widest shrink-0">Daftar Antrean — Umum</p>
-            <div id="qr-umum" class="flex justify-center items-center flex-1 min-h-0 py-3 px-3"></div>
-            <a id="link-umum" href="<?= APP_URL ?>/umum" target="_blank" rel="noopener"
-               class="block bg-emerald-700 text-white text-sm py-2.5 rounded-xl font-semibold w-full text-center shrink-0">Buka Link Pendaftaran</a>
+        <div class="bg-white rounded-2xl overflow-hidden flex flex-col items-center min-h-0 border-4 border-emerald-600">
+            <!-- Header band hijau -->
+            <div class="w-full bg-emerald-600 text-white flex items-center justify-center py-3 px-4 shrink-0 gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 sm:w-10 sm:h-10 shrink-0 opacity-90" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4" r="2"/><path d="M12 7c-2.21 0-4 1.79-4 4v5h2v5h4v-5h2v-5c0-2.21-1.79-4-4-4z"/></svg>
+                <p class="font-black text-2xl sm:text-3xl md:text-4xl uppercase tracking-wide leading-none">Umum</p>
+            </div>
+            <div id="qr-umum" class="flex justify-center items-center flex-1 min-h-0 py-2 px-3"></div>
+            <div class="w-full p-3 shrink-0">
+                <a id="link-umum" href="<?= APP_URL ?>/umum" target="_blank" rel="noopener"
+                   class="block bg-emerald-600 text-white text-sm py-2.5 rounded-xl font-semibold w-full text-center">Buka Link Pendaftaran</a>
+            </div>
         </div>
 
     </div>
@@ -138,9 +150,9 @@
             // Measure the QR section to size codes to fill available space
             const section = document.getElementById('qr-section');
             const rect    = section.getBoundingClientRect();
-            // card padding=16px×2, gap=8px, label~28px, button~42px, py-3~24px
-            const byH  = Math.floor(rect.height - 32 - 28 - 42 - 24);
-            const byW  = Math.floor(rect.width / 2 - 32 - 24); // card padding + px-3
+            // border=8px×2, header-band~70px, button-area~62px, py-2~16px
+            const byH  = Math.floor(rect.height - 16 - 70 - 62 - 16);
+            const byW  = Math.floor(rect.width / 2 - 16 - 24); // border + px-3
             const qrSize = Math.max(100, Math.min(byH, byW));
 
             new QRCode(document.getElementById('qr-disabilitas'), {
