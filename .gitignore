@@ -12,6 +12,9 @@ Thumbs.db
 # VS Code
 .vscode/
 
+# Claude Code
+.claude/
+
 # Logs
 *.log
 

@@ -80,6 +80,7 @@
         .section-label:nth-of-type(2) { animation-delay: 0.1s; }
         .section-label:nth-of-type(3) { animation-delay: 0.2s; }
         .section-label:nth-of-type(4) { animation-delay: 0.3s; }
+        .section-label:nth-of-type(5) { animation-delay: 0.4s; }
 
         .divider {
             background: linear-gradient(90deg, transparent, rgba(148,163,184,0.3), transparent);
@@ -289,6 +290,33 @@
                         <div>
                             <div class="font-bold text-base sm:text-lg">Laporan Bulanan</div>
                             <div class="text-violet-200 text-xs mt-1">Dashboard kunjungan, piket, IKM, PES per bulan</div>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- ── SEKSI 5: KERTAS KERJA ── -->
+        <section>
+            <p class="section-label text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                <span class="inline-block w-4 h-0.5 bg-slate-600"></span>
+                Kertas Kerja
+                <span class="inline-block flex-1 h-0.5 bg-slate-700/50"></span>
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <a href="https://drive.google.com/drive/folders/1VJVBvvkF-MHw8sZ8l8kJGBRiVTFx1Cd2?usp=sharing"
+                   target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                    bg-gradient-to-br from-yellow-500 to-amber-600
+                    border border-yellow-500/30">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">📝</div>
+                        <div>
+                            <div class="font-bold text-base sm:text-lg">Kertas Kerja Pemenuhan Data</div>
+                            <div class="text-yellow-100 text-xs mt-1">Folder kertas kerja pemenuhan data (Google Drive)</div>
                         </div>
                     </div>
                 </a>

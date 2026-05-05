@@ -53,9 +53,9 @@ $stmt = $mysqli->prepare(
         pemanfaatan_data=?, data_dibutuhkan=?, jenis_pelayanan=?, link_surat=?
      WHERE id=?"
 );
-// s×6, i, s, i, s×7, i  → 18 params
+// s×6, i, s, i, s×7, i  → 17 params
 $stmt->bind_param(
-    "ssssssisissssssssi",
+    "ssssssisisssssssi",
     $nama, $email, $telepon, $instansi, $jk, $tanggal,
     $jumlah_orang, $keperluan, $kunjungan_pst,
     $pendidikan, $kelompok_umur, $pekerjaan,
