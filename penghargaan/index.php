@@ -19,8 +19,11 @@ $mysqli->query("CREATE TABLE IF NOT EXISTS penghargaan_tim_penilai (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uniq_tp (pegawai_id, bulan, tahun, nama_penilai)
 )");
+// Migrate old evaluator names to new names (idempotent)
+$mysqli->query("UPDATE penghargaan_tim_penilai SET nama_penilai='madekariasa' WHERE nama_penilai='madepratiwi'");
+$mysqli->query("UPDATE penghargaan_tim_penilai SET nama_penilai='paseksusena' WHERE nama_penilai='ariwijaya'");
 
-$TIM_PENILAI = ['iwansantika', 'madepratiwi', 'ariwijaya'];
+$TIM_PENILAI = ['iwansantika', 'madekariasa', 'paseksusena'];
 $bulanIndo   = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 $selYear     = max(2020, min(2030, (int)($_GET['tahun'] ?? date('Y'))));
 $selMonth    = max(1, min(12, (int)($_GET['bulan'] ?? date('n'))));
@@ -316,21 +319,6 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
           </div>
           <?php endforeach; ?>
         </div>
-        <!-- Tim penilai detail -->
-        <?php if (!empty($r['tim_scores'])): ?>
-        <div class="px-5 py-2 bg-gray-50 border-t text-xs text-gray-500 flex flex-wrap gap-4">
-          <?php foreach ($TIM_PENILAI as $tp):
-            $ts = $r['tim_scores'][$tp] ?? null; ?>
-          <span>
-            <span class="font-semibold text-gray-600"><?= $tp ?>:</span>
-            <?php if ($ts): ?>
-              KS=<?= $ts['ks'] ?? '—' ?> &middot; Inv=<?= $ts['iv'] ?? '—' ?> &middot; Pen=<?= $ts['pe'] ?? '—' ?>
-            <?php else: ?><span class="text-gray-300">belum menilai</span>
-            <?php endif; ?>
-          </span>
-          <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
       </div>
       <?php endforeach; ?>
 
@@ -361,15 +349,29 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
               id="kinerja-<?= $r['id'] ?>"
               value="<?= $r['kinerja'] !== null ? $r['kinerja'] : '' ?>"
               placeholder="1–100"
-              class="w-20 border rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <button type="button" onclick="saveKinerja(<?= $r['id'] ?>, <?= $selMonth ?>, <?= $selYear ?>)"
-              class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded font-semibold transition">
-              Simpan
+              class="w-20 border rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+              data-original="<?= $r['kinerja'] !== null ? $r['kinerja'] : '' ?>">
+            <?php if ($r['kinerja'] !== null): ?>
+            <button type="button" onclick="hapusKinerja(<?= $r['id'] ?>, <?= $selMonth ?>, <?= $selYear ?>)"
+              title="Hapus nilai kinerja ini"
+              class="text-red-400 hover:text-red-600 text-xs px-1.5 py-1.5 rounded transition">
+              <i class="fas fa-times-circle"></i>
             </button>
-            <span id="kinerja-status-<?= $r['id'] ?>" class="text-xs"></span>
+            <?php endif; ?>
           </div>
         </div>
         <?php endforeach; ?>
+      </div>
+      <div class="mt-4 flex items-center justify-end gap-3 flex-wrap">
+        <span id="kinerja-all-status" class="text-sm mr-auto"></span>
+        <button type="button" onclick="batalkanKinerja()"
+          class="text-gray-500 hover:text-gray-700 text-sm px-4 py-2 rounded-lg border border-gray-300 hover:border-gray-400 transition">
+          <i class="fas fa-undo mr-1"></i>Batalkan Perubahan
+        </button>
+        <button type="button" onclick="saveAllKinerja()"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2 rounded-lg font-semibold transition">
+          <i class="fas fa-save mr-1"></i>Simpan Semua
+        </button>
       </div>
     </div>
 
@@ -418,14 +420,25 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
             <?php endforeach; ?>
           </div>
           <div class="mt-3 flex items-center gap-2">
-            <button type="button" onclick="saveTimPenilai(<?= $r['id'] ?>, <?= $selMonth ?>, <?= $selYear ?>)"
-              class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-4 py-1.5 rounded font-semibold transition">
-              <i class="fas fa-save mr-1"></i>Simpan
+            <button type="button" onclick="hapusTimPenilai(<?= $r['id'] ?>, <?= $selMonth ?>, <?= $selYear ?>)"
+              id="tim-hapus-<?= $r['id'] ?>"
+              class="hidden text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded border border-red-200 hover:border-red-400 transition">
+              <i class="fas fa-trash-alt mr-1"></i>Batalkan Penilaian Saya
             </button>
-            <span id="tim-status-<?= $r['id'] ?>" class="text-xs"></span>
           </div>
         </div>
         <?php endforeach; ?>
+        <div class="mt-4 flex items-center justify-end gap-3 flex-wrap">
+          <span id="tim-all-status" class="text-sm mr-auto"></span>
+          <button type="button" onclick="batalkanTim()"
+            class="text-gray-500 hover:text-gray-700 text-sm px-4 py-2 rounded-lg border border-gray-300 hover:border-gray-400 transition">
+            <i class="fas fa-undo mr-1"></i>Batalkan Perubahan
+          </button>
+          <button type="button" onclick="saveAllTimPenilai()"
+            class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-5 py-2 rounded-lg font-semibold transition">
+            <i class="fas fa-save mr-1"></i>Simpan Semua
+          </button>
+        </div>
       </div>
 
       <div id="tim-placeholder" class="text-center text-gray-400 py-8 text-sm">
@@ -438,10 +451,11 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
 </div>
 
 <script>
-const APP_BASE   = '<?= APP_BASE ?>';
-const BULAN      = <?= $selMonth ?>;
-const TAHUN      = <?= $selYear ?>;
+const APP_BASE    = '<?= APP_BASE ?>';
+const BULAN       = <?= $selMonth ?>;
+const TAHUN       = <?= $selYear ?>;
 const SEL_PENILAI = <?= json_encode($selPenilai) ?>;
+const OFFICER_IDS = <?= json_encode(array_column($results, 'id')) ?>;
 
 // Stored tim penilai scores from PHP (indexed by pegawai_id)
 const timScores = <?= json_encode(array_column($results, 'tim_scores', 'id')) ?>;
@@ -456,27 +470,64 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// Save kinerja
-async function saveKinerja(pid, bulan, tahun) {
-  const val      = document.getElementById('kinerja-' + pid).value.trim();
-  const statusEl = document.getElementById('kinerja-status-' + pid);
-  if (!val || parseInt(val) < 1 || parseInt(val) > 100) {
-    setStatus(statusEl, 'Nilai harus 1–100', 'red'); return;
+// Save all kinerja
+async function saveAllKinerja() {
+  const statusEl = document.getElementById('kinerja-all-status');
+  const toSave = [];
+  for (const pid of OFFICER_IDS) {
+    const inp = document.getElementById('kinerja-' + pid);
+    if (!inp) continue;
+    const val = inp.value.trim();
+    if (!val) continue;
+    if (parseInt(val) < 1 || parseInt(val) > 100) {
+      setStatus(statusEl, 'Nilai harus 1–100', 'red'); return;
+    }
+    toSave.push({ pid, val });
   }
+  if (toSave.length === 0) { setStatus(statusEl, 'Tidak ada nilai yang diisi', 'red'); return; }
   setStatus(statusEl, 'Menyimpan…', 'gray');
+  let ok = 0, fail = 0;
+  for (const { pid, val } of toSave) {
+    const fd = new FormData();
+    fd.append('tipe', 'kinerja'); fd.append('pegawai_id', pid);
+    fd.append('bulan', BULAN); fd.append('tahun', TAHUN); fd.append('nilai', val);
+    const res = await postSave(fd);
+    res.success ? ok++ : fail++;
+  }
+  if (fail === 0) {
+    setStatus(statusEl, `✓ ${ok} tersimpan`, 'green');
+    setTimeout(() => location.href = `?bulan=${BULAN}&tahun=${TAHUN}&tab=kinerja`, 800);
+  } else {
+    setStatus(statusEl, `${ok} tersimpan, ${fail} gagal`, 'red');
+  }
+}
+
+// Hapus nilai kinerja satu petugas dari DB
+async function hapusKinerja(pid, bulan, tahun) {
+  if (!confirm('Hapus nilai kinerja ini dari database?')) return;
+  const statusEl = document.getElementById('kinerja-all-status');
   const fd = new FormData();
   fd.append('tipe', 'kinerja'); fd.append('pegawai_id', pid);
-  fd.append('bulan', bulan); fd.append('tahun', tahun); fd.append('nilai', val);
-  const res = await postSave(fd);
+  fd.append('bulan', bulan); fd.append('tahun', tahun);
+  const res = await postDelete(fd);
   if (res.success) {
-    setStatus(statusEl, '✓ Tersimpan', 'green');
+    setStatus(statusEl, '✓ Nilai dihapus', 'green');
     setTimeout(() => location.href = `?bulan=${BULAN}&tahun=${TAHUN}&tab=kinerja`, 800);
   } else {
     setStatus(statusEl, res.message || 'Gagal', 'red');
   }
 }
 
-// Pre-fill tim inputs when penilai is selected
+// Batalkan semua perubahan kinerja yang belum disimpan (kembalikan ke nilai DB)
+function batalkanKinerja() {
+  for (const pid of OFFICER_IDS) {
+    const inp = document.getElementById('kinerja-' + pid);
+    if (inp) inp.value = inp.dataset.original || '';
+  }
+  setStatus(document.getElementById('kinerja-all-status'), 'Perubahan dibatalkan', 'gray');
+}
+
+// Pre-fill tim inputs when penilai is selected; show/hide Hapus buttons
 function updateTimInputs() {
   const penilai     = document.getElementById('select-penilai').value;
   const form        = document.getElementById('tim-form');
@@ -485,44 +536,104 @@ function updateTimInputs() {
   form.classList.remove('hidden'); placeholder.classList.add('hidden');
 
   document.querySelectorAll('.tim-input').forEach(inp => {
-    const pid   = inp.dataset.pid;
-    const key   = inp.dataset.key;
-    const score = (timScores[pid] && timScores[pid][penilai]) ? timScores[pid][penilai][key] : '';
-    inp.value   = score || '';
+    const pid = inp.dataset.pid;
+    const key = inp.dataset.key;
+    let score = (timScores[pid] && timScores[pid][penilai]) ? timScores[pid][penilai][key] : '';
+    // For iwansantika: default to avg of paseksusena + madekariasa if not yet saved
+    if (!score && penilai === 'iwansantika') {
+      const a = timScores[pid]?.paseksusena?.[key] ?? null;
+      const b = timScores[pid]?.madekariasa?.[key] ?? null;
+      if (a !== null && b !== null) score = Math.round((+a + +b) / 2);
+      else if (a !== null) score = a;
+      else if (b !== null) score = b;
+    }
+    inp.value = score || '';
   });
+
+  // Show "Batalkan Penilaian Saya" only for rows this penilai already submitted
+  for (const pid of OFFICER_IDS) {
+    const hapusBtn = document.getElementById('tim-hapus-' + pid);
+    if (!hapusBtn) continue;
+    const hasScore = !!(timScores[pid] && timScores[pid][penilai]);
+    hasScore ? hapusBtn.classList.remove('hidden') : hapusBtn.classList.add('hidden');
+  }
 }
 
-// Save tim penilai
-async function saveTimPenilai(pid, bulan, tahun) {
+// Save all tim penilai
+async function saveAllTimPenilai() {
   const penilai  = document.getElementById('select-penilai').value;
-  const statusEl = document.getElementById('tim-status-' + pid);
+  const statusEl = document.getElementById('tim-all-status');
   if (!penilai) { setStatus(statusEl, 'Pilih nama Anda dulu', 'red'); return; }
-  const ks = document.getElementById('tim-' + pid + '-ks').value.trim();
-  const iv = document.getElementById('tim-' + pid + '-iv').value.trim();
-  const pe = document.getElementById('tim-' + pid + '-pe').value.trim();
-  for (const v of [ks, iv, pe]) {
-    if (!v || parseInt(v) < 1 || parseInt(v) > 100) {
-      setStatus(statusEl, 'Semua nilai harus 1–100', 'red'); return;
+  const toSave = [];
+  for (const pid of OFFICER_IDS) {
+    const ks = document.getElementById('tim-' + pid + '-ks').value.trim();
+    const iv = document.getElementById('tim-' + pid + '-iv').value.trim();
+    const pe = document.getElementById('tim-' + pid + '-pe').value.trim();
+    if (!ks && !iv && !pe) continue;
+    for (const v of [ks, iv, pe]) {
+      if (!v || parseInt(v) < 1 || parseInt(v) > 100) {
+        setStatus(statusEl, 'Semua nilai harus 1–100 (atau kosongkan semua)', 'red'); return;
+      }
     }
+    toSave.push({ pid, ks, iv, pe });
   }
+  if (toSave.length === 0) { setStatus(statusEl, 'Tidak ada nilai yang diisi', 'red'); return; }
   setStatus(statusEl, 'Menyimpan…', 'gray');
+  let ok = 0, fail = 0;
+  for (const { pid, ks, iv, pe } of toSave) {
+    const fd = new FormData();
+    fd.append('tipe', 'tim_penilai'); fd.append('pegawai_id', pid);
+    fd.append('bulan', BULAN); fd.append('tahun', TAHUN);
+    fd.append('nama_penilai', penilai);
+    fd.append('nilai_kerja_sama', ks); fd.append('nilai_inovatif', iv); fd.append('nilai_penampilan', pe);
+    const res = await postSave(fd);
+    res.success ? ok++ : fail++;
+  }
+  if (fail === 0) {
+    setStatus(statusEl, `✓ ${ok} tersimpan`, 'green');
+    setTimeout(() => location.href = `?bulan=${BULAN}&tahun=${TAHUN}&tab=tim&penilai=${encodeURIComponent(penilai)}`, 800);
+  } else {
+    setStatus(statusEl, `${ok} tersimpan, ${fail} gagal`, 'red');
+  }
+}
+
+// Hapus penilaian tim penilai satu petugas dari DB
+async function hapusTimPenilai(pid, bulan, tahun) {
+  const penilai  = document.getElementById('select-penilai').value;
+  const statusEl = document.getElementById('tim-all-status');
+  if (!penilai) { setStatus(statusEl, 'Pilih nama Anda dulu', 'red'); return; }
+  if (!confirm(`Batalkan penilaian ${penilai} untuk petugas ini?`)) return;
   const fd = new FormData();
   fd.append('tipe', 'tim_penilai'); fd.append('pegawai_id', pid);
   fd.append('bulan', bulan); fd.append('tahun', tahun);
   fd.append('nama_penilai', penilai);
-  fd.append('nilai_kerja_sama', ks); fd.append('nilai_inovatif', iv); fd.append('nilai_penampilan', pe);
-  const res = await postSave(fd);
+  const res = await postDelete(fd);
   if (res.success) {
-    setStatus(statusEl, '✓ Tersimpan', 'green');
+    setStatus(statusEl, '✓ Penilaian dibatalkan', 'green');
     setTimeout(() => location.href = `?bulan=${BULAN}&tahun=${TAHUN}&tab=tim&penilai=${encodeURIComponent(penilai)}`, 800);
   } else {
     setStatus(statusEl, res.message || 'Gagal', 'red');
   }
 }
 
+// Batalkan perubahan tim penilai yang belum disimpan (kembalikan ke nilai DB)
+function batalkanTim() {
+  updateTimInputs();
+  setStatus(document.getElementById('tim-all-status'), 'Perubahan dibatalkan', 'gray');
+}
+
 async function postSave(fd) {
   try {
     const r = await fetch(APP_BASE + '/penghargaan/action/save.php', { method: 'POST', body: fd });
+    return await r.json();
+  } catch (e) {
+    return { success: false, message: 'Gagal menghubungi server' };
+  }
+}
+
+async function postDelete(fd) {
+  try {
+    const r = await fetch(APP_BASE + '/penghargaan/action/delete.php', { method: 'POST', body: fd });
     return await r.json();
   } catch (e) {
     return { success: false, message: 'Gagal menghubungi server' };

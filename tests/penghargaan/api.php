@@ -147,7 +147,7 @@ T::ok('bulan=0 → success=false', ($r['success'] ?? true) === false);
 // ── 5. tipe=tim_penilai — valid ──────────────────────────────────────────────
 T::header('tipe=tim_penilai — Valid');
 
-$validPenilai = ['iwansantika', 'madepratiwi', 'ariwijaya'];
+$validPenilai = ['iwansantika', 'madekariasa', 'paseksusena'];
 foreach ($validPenilai as $np) {
     $r = postEndpoint($ENDPOINT, [
         'tipe'            => 'tim_penilai',
@@ -254,8 +254,55 @@ foreach ($pages as $p) {
     T::ok($p['label'] . " → HTTP 200", $code === 200);
 }
 
-// ── Cleanup data test ────────────────────────────────────────────────────────
-// Hapus via DB langsung (lebih bersih daripada endpoint hapus yang tidak ada)
+// ── 10. Delete endpoint ──────────────────────────────────────────────────────
+T::header('Delete Endpoint');
+
+$DEL = APP_URL . '/penghargaan/action/delete.php';
+
+// GET → ditolak
+$r = getEndpoint($DEL);
+T::ok('GET delete → success=false', ($r['success'] ?? true) === false);
+
+// Hapus kinerja yang sudah disimpan di tes sebelumnya
+$r = postEndpoint($DEL, [
+    'tipe' => 'kinerja', 'pegawai_id' => $testPid,
+    'bulan' => $testBulan, 'tahun' => $testTahun,
+]);
+T::ok('Hapus kinerja valid → success=true', ($r['success'] ?? false) === true);
+
+// Hapus lagi (tidak ada baris) → tetap success (DELETE 0 rows bukan error)
+$r = postEndpoint($DEL, [
+    'tipe' => 'kinerja', 'pegawai_id' => $testPid,
+    'bulan' => $testBulan, 'tahun' => $testTahun,
+]);
+T::ok('Hapus kinerja tidak ada → success=true', ($r['success'] ?? false) === true);
+
+// Hapus tim penilai
+$r = postEndpoint($DEL, [
+    'tipe' => 'tim_penilai', 'pegawai_id' => $testPid,
+    'bulan' => $testBulan, 'tahun' => $testTahun, 'nama_penilai' => 'iwansantika',
+]);
+T::ok('Hapus tim_penilai valid → success=true', ($r['success'] ?? false) === true);
+
+// Penilai tidak valid → ditolak
+$r = postEndpoint($DEL, [
+    'tipe' => 'tim_penilai', 'pegawai_id' => $testPid,
+    'bulan' => $testBulan, 'tahun' => $testTahun, 'nama_penilai' => 'admin',
+]);
+T::ok('Hapus penilai tidak valid → success=false', ($r['success'] ?? true) === false);
+
+// Tipe tidak dikenal
+$r = postEndpoint($DEL, [
+    'tipe' => 'semua', 'pegawai_id' => $testPid,
+    'bulan' => $testBulan, 'tahun' => $testTahun,
+]);
+T::ok("tipe='semua' → success=false", ($r['success'] ?? true) === false);
+
+// Data tidak lengkap
+$r = postEndpoint($DEL, ['tipe' => 'kinerja']);
+T::ok('Tanpa pegawai_id → success=false', ($r['success'] ?? true) === false);
+
+// ── Cleanup sisa data test ───────────────────────────────────────────────────
 include_once 'config.php';
 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if (!$db->connect_error) {

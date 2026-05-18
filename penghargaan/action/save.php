@@ -56,7 +56,7 @@ if ($tipe === 'kinerja') {
     echo json_encode(['success' => true]);
 
 } elseif ($tipe === 'tim_penilai') {
-    $VALID = ['iwansantika', 'madepratiwi', 'ariwijaya'];
+    $VALID = ['iwansantika', 'madekariasa', 'paseksusena'];
     $nama_penilai = trim($_POST['nama_penilai'] ?? '');
     if (!in_array($nama_penilai, $VALID)) {
         echo json_encode(['success' => false, 'message' => 'Nama penilai tidak valid']); exit;
