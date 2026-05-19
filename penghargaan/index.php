@@ -191,7 +191,7 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
 
 <!-- Mobile topbar -->
 <div class="lg:hidden fixed top-0 inset-x-0 z-40 bg-white border-b flex items-center gap-2 px-3 h-11 no-print">
-  <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')" class="p-1.5 rounded hover:bg-gray-100">
+  <button onclick="const sb=document.getElementById('sidebar'),ov=document.getElementById('sidebarOverlay');sb.classList.toggle('-translate-x-full');ov.classList.toggle('hidden',!sb.classList.contains('-translate-x-full'));" class="p-1.5 rounded hover:bg-gray-100">
     <i class="fas fa-bars text-gray-600"></i>
   </button>
   <span class="text-sm font-semibold truncate">Petugas PST Terbaik</span>
