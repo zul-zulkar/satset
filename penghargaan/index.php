@@ -171,15 +171,11 @@ usort($results, fn($a, $b) =>
 );
 
 $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
+
+$page_title  = 'Petugas PST Terbaik · ' . $periodLabel;
+$head_extras = ['fontawesome'];
+include __DIR__ . '/../partials/_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Petugas PST Terbaik · <?= $periodLabel ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   body { font-family: system-ui, sans-serif; }
   .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }

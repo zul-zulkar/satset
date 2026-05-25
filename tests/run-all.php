@@ -18,6 +18,10 @@ $filter = $argv[1] ?? null;
 $suites = [
     'smoke'       => 'php tests/smoke/run.php',
     'penghargaan' => 'php tests/penghargaan/run.php',
+    'security'    => 'php tests/security/run.php',
+    'cs'          => 'php tests/cs/run.php',
+    'form'        => 'php tests/form/run.php',
+    'absensi'     => 'php tests/absensi/run.php',
 ];
 
 if ($filter !== null && !isset($suites[$filter])) {

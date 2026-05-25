@@ -118,16 +118,12 @@ $sentimenLabel = ['negatif' => '😞 Negatif', 'normal' => '😐 Normal', 'posit
 
 $jenis   = $antrian['jenis'] ?? '';
 $tanggal = $antrian['tanggal'] ?? '';
+
+$page_title  = 'Detail Pengunjung — ' . $antrian['nama'];
+$head_extras = ['fontawesome'];
+include __DIR__ . '/../partials/_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Detail Pengunjung — <?= h($antrian['nama']) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
+<style>
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }

@@ -37,16 +37,12 @@ $jenisMeta = [
     'whatsapp'    => ['border' => 'border-l-4 border-l-green-500',  'badge' => 'bg-green-100 text-green-800 border-green-200',   'icon' => 'fa-brands fa-whatsapp',    'label' => 'WhatsApp'],
     'surat'       => ['border' => 'border-l-4 border-l-amber-500',  'badge' => 'bg-amber-100 text-amber-800 border-amber-200',   'icon' => 'fa-solid fa-envelope',     'label' => 'Surat'],
 ];
+
+$page_title  = 'Daftar Pengguna';
+$head_extras = ['fontawesome'];
+include __DIR__ . '/../partials/_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Daftar Pengguna</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <!-- safelist amber & rose & violet & indigo classes agar Tailwind CDN tidak prune -->
     <div class="hidden bg-amber-100 text-amber-800 border-amber-200 border-l-4 border-l-amber-500
                 bg-rose-100 text-rose-800 border-rose-200 bg-rose-50 text-rose-700 accent-rose-500 focus:ring-rose-400

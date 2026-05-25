@@ -191,18 +191,14 @@ function renderFormWhatsapp($judul) {
     $oldTahunSampai         = $old['tahun_sampai']            ?? [];
     $oldJenisPelayanan      = $old['jenis_pelayanan']         ?? '';
     $oldPengaduanText       = $old['pengaduan_text']          ?? '';
+
+    $page_title = $judul;
+    include __DIR__ . '/../partials/_head.php';
     ?>
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <title><?= htmlspecialchars($judul) ?></title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-            .radio-label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.25rem 0; }
-            .radio-label input[type=radio] { accent-color:#16a34a; width:1rem; height:1rem; flex-shrink:0; }
-        </style>
+    <style>
+        .radio-label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.25rem 0; }
+        .radio-label input[type=radio] { accent-color:#16a34a; width:1rem; height:1rem; flex-shrink:0; }
+    </style>
     </head>
     <body class="bg-gray-100 min-h-screen py-8 px-4">
     <div class="w-full max-w-xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow">

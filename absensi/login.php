@@ -47,15 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$page_title  = 'Login · Absensi PST BPS Buleleng';
+$head_extras = ['fontawesome'];
+include __DIR__ . '/../partials/_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Login · Absensi PST BPS Buleleng</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   body { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 60%, #3b82f6 100%); }
 </style>

@@ -23,11 +23,18 @@ include __DIR__ . '/partials/_head.php';
     include 'db.php';
     $tanggal = date('Y-m-d');
 
-    $res = $mysqli->query("SELECT nomor FROM antrian WHERE tanggal='$tanggal' AND jenis='disabilitas' AND status='dipanggil' ORDER BY id DESC LIMIT 1");
-    $nomorDisabilitas = ($row = $res->fetch_assoc()) ? $row['nomor'] : '-';
+    $stmtNomor = $mysqli->prepare("SELECT nomor FROM antrian WHERE tanggal = ? AND jenis = ? AND status = 'dipanggil' ORDER BY id DESC LIMIT 1");
 
-    $res = $mysqli->query("SELECT nomor FROM antrian WHERE tanggal='$tanggal' AND jenis='umum' AND status='dipanggil' ORDER BY id DESC LIMIT 1");
-    $nomorUmum = ($row = $res->fetch_assoc()) ? $row['nomor'] : '-';
+    $jenisFetch = 'disabilitas';
+    $stmtNomor->bind_param("ss", $tanggal, $jenisFetch);
+    $stmtNomor->execute();
+    $nomorDisabilitas = ($row = $stmtNomor->get_result()->fetch_assoc()) ? $row['nomor'] : '-';
+
+    $jenisFetch = 'umum';
+    $stmtNomor->bind_param("ss", $tanggal, $jenisFetch);
+    $stmtNomor->execute();
+    $nomorUmum = ($row = $stmtNomor->get_result()->fetch_assoc()) ? $row['nomor'] : '-';
+    $stmtNomor->close();
 
     $stmt = $mysqli->prepare("SELECT jenis, COUNT(*) AS total FROM antrian WHERE tanggal=? AND jenis IN ('disabilitas','umum','whatsapp','surat') GROUP BY jenis");
     $stmt->bind_param("s", $tanggal);

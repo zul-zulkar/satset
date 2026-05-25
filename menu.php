@@ -1,13 +1,10 @@
-<?php include_once __DIR__ . '/config.php'; ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Menu — Sistem Antrean BPS Buleleng</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <style>
+<?php
+include_once __DIR__ . '/config.php';
+$page_title  = 'Menu — Sistem Antrean BPS Buleleng';
+$head_extras = ['qrcodejs'];
+include __DIR__ . '/partials/_head.php';
+?>
+<style>
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(28px); }
             to   { opacity: 1; transform: translateY(0); }

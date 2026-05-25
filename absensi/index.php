@@ -89,15 +89,11 @@ $stmtRekap->bind_param("s", $today);
 $stmtRekap->execute();
 $rekapHariIni = $stmtRekap->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmtRekap->close();
+
+$page_title  = 'Absensi Piket PST · BPS Buleleng';
+$head_extras = ['fontawesome'];
+include __DIR__ . '/../partials/_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Absensi Piket PST · BPS Buleleng</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   @keyframes spin-gps { to { transform: rotate(360deg); } }
   .spin-gps { animation: spin-gps 1s linear infinite; }

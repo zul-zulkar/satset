@@ -139,18 +139,14 @@ function renderForm($jenis, $judul) {
     $oldTahunSampai          = $old['tahun_sampai']            ?? [];
     $isPST                   = ($old['keperluan_pst'] ?? '') === '1';
     $oldJenisPelayanan       = $old['jenis_pelayanan']         ?? '';
+
+    $page_title = $judul;
+    include __DIR__ . '/../partials/_head.php';
     ?>
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <title><?= htmlspecialchars($judul) ?></title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-            .radio-label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.25rem 0; }
-            .radio-label input[type=radio] { accent-color:#2563eb; width:1rem; height:1rem; flex-shrink:0; }
-        </style>
+    <style>
+        .radio-label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.25rem 0; }
+        .radio-label input[type=radio] { accent-color:#2563eb; width:1rem; height:1rem; flex-shrink:0; }
+    </style>
     </head>
     <body class="bg-gray-100 p-4 sm:p-10">
     <div class="w-full max-w-xl mx-auto bg-white p-6 rounded shadow">

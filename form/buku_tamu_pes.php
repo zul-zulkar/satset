@@ -300,14 +300,11 @@ function renderFormPes($token) {
     $seksiSumber  = $totalDataItems > 0 ? 'd' : null;
     $seksiSentimen = $totalDataItems > 0 ? 'e' : 'd';
 
-    ?><!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($judul) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    $page_title  = $judul;
+    $head_extras = ['fontawesome'];
+    include __DIR__ . '/../partials/_head.php';
+    ?>
     <style>
         .dropdown-open { border-color: #0d9488 !important; box-shadow: 0 0 0 2px rgba(13,148,136,.25); }
     </style>
@@ -836,13 +833,10 @@ updateKategoriPreview();
 
 function renderPesMessage($type, $judul, $pesan) {
     $icon = $type === 'done' ? '✅' : ($type === 'error' ? '❌' : 'ℹ️');
-    ?><!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($judul) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    $page_title = $judul;
+    include __DIR__ . '/../partials/_head.php';
+    ?>
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center px-4">
     <div class="text-center max-w-md">

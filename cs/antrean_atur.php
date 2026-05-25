@@ -1,39 +1,59 @@
 <?php
 include '../db.php';
 
-
 $tanggal = date('Y-m-d');
+$JENIS_VALID = ['disabilitas', 'umum'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $jenis = $_POST['jenis'];
-    $aksi = $_POST['aksi'];
+    $jenis = $_POST['jenis'] ?? '';
+    $aksi  = $_POST['aksi']  ?? '';
 
-    if ($aksi === 'next') {
-        // Panggil antrean berikutnya
-        $result = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal' AND jenis = '$jenis' AND status = 'menunggu' ORDER BY id ASC LIMIT 1");
-        if ($row = $result->fetch_assoc()) {
-            $mysqli->query("UPDATE antrian SET status = 'dipanggil' WHERE id = " . $row['id']);
-        }
-    } elseif ($aksi === 'undo') {
-        // Kembalikan antrean terakhir ke status 'menunggu'
-        $last = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal' AND jenis = '$jenis' AND status = 'dipanggil' ORDER BY id DESC LIMIT 1");
-        if ($row = $last->fetch_assoc()) {
-            $mysqli->query("UPDATE antrian SET status = 'menunggu' WHERE id = " . $row['id']);
+    if (in_array($jenis, $JENIS_VALID, true) && in_array($aksi, ['next', 'undo'], true)) {
+        if ($aksi === 'next') {
+            $stmt = $mysqli->prepare("SELECT id FROM antrian WHERE tanggal = ? AND jenis = ? AND status = 'menunggu' ORDER BY id ASC LIMIT 1");
+            $stmt->bind_param("ss", $tanggal, $jenis);
+            $stmt->execute();
+            if ($row = $stmt->get_result()->fetch_assoc()) {
+                $stmt->close();
+                $up = $mysqli->prepare("UPDATE antrian SET status = 'dipanggil' WHERE id = ?");
+                $up->bind_param("i", $row['id']);
+                $up->execute();
+                $up->close();
+            } else {
+                $stmt->close();
+            }
+        } else {
+            $stmt = $mysqli->prepare("SELECT id FROM antrian WHERE tanggal = ? AND jenis = ? AND status = 'dipanggil' ORDER BY id DESC LIMIT 1");
+            $stmt->bind_param("ss", $tanggal, $jenis);
+            $stmt->execute();
+            if ($row = $stmt->get_result()->fetch_assoc()) {
+                $stmt->close();
+                $up = $mysqli->prepare("UPDATE antrian SET status = 'menunggu' WHERE id = ?");
+                $up->bind_param("i", $row['id']);
+                $up->execute();
+                $up->close();
+            } else {
+                $stmt->close();
+            }
         }
     }
 }
 
-$terakhir_disabilitas = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal' AND jenis = 'disabilitas' AND status = 'dipanggil' ORDER BY id DESC LIMIT 1")->fetch_assoc();
-$terakhir_umum = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal' AND jenis = 'umum' AND status = 'dipanggil' ORDER BY id DESC LIMIT 1")->fetch_assoc();
-?>
+function fetchTerakhir(mysqli $mysqli, string $tanggal, string $jenis): ?array {
+    $stmt = $mysqli->prepare("SELECT * FROM antrian WHERE tanggal = ? AND jenis = ? AND status = 'dipanggil' ORDER BY id DESC LIMIT 1");
+    $stmt->bind_param("ss", $tanggal, $jenis);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Halaman CS - Antrian</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+$terakhir_disabilitas = fetchTerakhir($mysqli, $tanggal, 'disabilitas');
+$terakhir_umum        = fetchTerakhir($mysqli, $tanggal, 'umum');
+
+$page_title = 'Halaman CS - Antrian';
+include __DIR__ . '/../partials/_head.php';
+?>
 </head>
 <body class="bg-gray-100 p-8">
 
@@ -73,26 +93,6 @@ $terakhir_umum = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal
             </form>
         </div>
     </div>
-    <?php
-$panggilan = null;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($row)) {
-    // Ambil ulang antrean terakhir yang sudah dipanggil setelah update
-    if ($jenis === 'disabilitas') {
-        $terakhir = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal' AND jenis = 'disabilitas' AND status = 'dipanggil' ORDER BY id DESC LIMIT 1")->fetch_assoc();
-    } else {
-        $terakhir = $mysqli->query("SELECT * FROM antrian WHERE tanggal = '$tanggal' AND jenis = 'umum' AND status = 'dipanggil' ORDER BY id DESC LIMIT 1")->fetch_assoc();
-    }
-
-    $panggilan = [
-        'jenis' => $jenis,
-        'nomor' => $terakhir ? $terakhir['nomor'] : null,
-        'aksi' => $aksi
-    ];
-}
-
-?>
-
 
 <!-- ── TABEL PENGUNJUNG HARI INI ── -->
 <div class="mt-8 bg-white rounded shadow overflow-hidden">
