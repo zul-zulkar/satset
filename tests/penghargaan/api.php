@@ -11,7 +11,7 @@
 require_once __DIR__ . '/../_lib/T.php';
 
 chdir(dirname(__DIR__, 2));
-include_once 'config.php';
+include_once 'app/config.php';
 
 T::reset();
 
@@ -303,7 +303,7 @@ $r = postEndpoint($DEL, ['tipe' => 'kinerja']);
 T::ok('Tanpa pegawai_id → success=false', ($r['success'] ?? true) === false);
 
 // ── Cleanup sisa data test ───────────────────────────────────────────────────
-include_once 'config.php';
+include_once 'app/config.php';
 $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if (!$db->connect_error) {
     $db->query("DELETE FROM penghargaan_penilaian WHERE pegawai_id=$testPid AND tahun=$testTahun");

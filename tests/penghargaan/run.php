@@ -31,7 +31,7 @@ echo "\e[1m\e[34m║   Test Suite: Penghargaan PST Terbaik            ║\e[0m\n
 echo "\e[1m\e[34m╚══════════════════════════════════════════════════╝\e[0m\n";
 
 // Tampilkan info environment
-include_once 'config.php';
+include_once 'app/config.php';
 echo "\e[90m  ENV: " . ENV . " | DB: " . DB_NAME . "@" . DB_HOST . " | URL: " . APP_URL . "\e[0m\n";
 echo "\e[90m  PHP: " . PHP_VERSION . " | Waktu: " . date('Y-m-d H:i:s') . "\e[0m\n";
 

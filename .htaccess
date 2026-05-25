@@ -1,2 +1,18 @@
 Options +FollowSymLinks -MultiViews
-DirectoryIndex index.php index.html
+DirectoryIndex public/index.php
+
+# ============================================================================
+#  Project-level .htaccess — rewrite semua request ke public/.
+#  Lingkungan:
+#    - Lokal  (XAMPP): URL http://192.168.2.54/satset/...  → public/...
+#    - Produksi      : URL https://satset.statsbali.id/... → public/...
+#  Catatan: app/, vendor/, tests/, templat/, sql_production/ TIDAK web-accessible.
+# ============================================================================
+
+RewriteEngine On
+
+# Stop kalau path sudah diawali public/ (mencegah rewrite-loop tak terbatas).
+RewriteRule ^public/ - [L]
+
+# Rewrite semua path lain ke public/<path>.
+RewriteRule ^(.*)$ public/$1 [L]

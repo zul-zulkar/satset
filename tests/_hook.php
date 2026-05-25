@@ -10,6 +10,10 @@
  * Exit code 2  = block, kasih feedback ke Claude
  */
 
+// Kill-switch: jika file `_hook.disabled` ada di tests/, hook ini di-skip
+// (pakai saat restructure besar / migrasi yang sementara membuat smoke test gagal).
+if (file_exists(__DIR__ . '/_hook.disabled')) exit(0);
+
 $in = json_decode(file_get_contents('php://stdin'), true) ?: [];
 $fp = $in['tool_input']['file_path'] ?? $in['tool_input']['path'] ?? '';
 

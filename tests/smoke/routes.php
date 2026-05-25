@@ -10,7 +10,7 @@
 require_once __DIR__ . '/../_lib/T.php';
 
 chdir(dirname(__DIR__, 2));
-include_once 'config.php';
+include_once 'app/config.php';
 
 T::reset();
 T::header('Smoke Tests — Route Reachability');
