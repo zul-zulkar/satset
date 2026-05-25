@@ -1,7 +1,9 @@
 <?php
 /**
- * Minimal test assertion helper.
- * Tidak memerlukan library eksternal — cukup PHP CLI.
+ * Shared test assertion helper.
+ * Tidak butuh library eksternal — cukup PHP CLI.
+ *
+ * Suite test pakai: require_once __DIR__ . '/../_lib/T.php';
  */
 class T {
     public static int $pass = 0;

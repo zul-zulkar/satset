@@ -29,3 +29,7 @@ node_modules/
 /input/
 
 /backup/
+
+# Backup/archive snapshots
+*.zip
+*.tar.gz

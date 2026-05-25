@@ -195,6 +195,9 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
     <i class="fas fa-bars text-gray-600"></i>
   </button>
   <span class="text-sm font-semibold truncate">Petugas PST Terbaik</span>
+  <span class="ml-auto inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shrink-0">
+    <i class="fas fa-calendar-alt text-[10px]"></i><?= htmlspecialchars($periodLabel) ?>
+  </span>
 </div>
 <div id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.add('-translate-x-full');this.classList.add('hidden')"
      class="hidden fixed inset-0 bg-black/30 z-40 no-print"></div>
@@ -208,6 +211,12 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
 
   <div class="px-3 py-3 border-b space-y-2">
     <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Periode</div>
+    <!-- Periode aktif — prominent badge -->
+    <div class="bg-blue-600 rounded-xl px-3 py-2.5 text-center text-white">
+      <div class="text-[10px] font-semibold uppercase tracking-widest opacity-75 mb-0.5">Periode Aktif</div>
+      <div class="text-xl font-black leading-none"><?= $bulanIndo[$selMonth] ?></div>
+      <div class="text-sm font-semibold opacity-80 mt-0.5"><?= $selYear ?></div>
+    </div>
     <div class="flex gap-1">
       <a href="?bulan=<?= $pM ?>&tahun=<?= $pY ?>&tab=<?= $activeTab ?>" class="flex-1 text-center text-xs py-1.5 rounded border hover:bg-gray-100"><i class="fas fa-chevron-left"></i></a>
       <a href="?bulan=<?= $nM ?>&tahun=<?= $nY ?>&tab=<?= $activeTab ?>" class="flex-1 text-center text-xs py-1.5 rounded border hover:bg-gray-100"><i class="fas fa-chevron-right"></i></a>
@@ -246,10 +255,17 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
     <!-- Header -->
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Petugas PST Terbaik</h1>
-      <p class="text-gray-500 text-sm mt-0.5">Penilaian <?= htmlspecialchars($periodLabel) ?> &mdash;
-        <?= count($officers) ?> petugas piket &middot;
-        <?= $hariKerja ?> hari kerja &middot;
-        <?= $totalPST ?> pengunjung PST</p>
+      <div class="mt-2 flex items-center gap-3 flex-wrap">
+        <span class="inline-flex items-center gap-2 bg-blue-600 text-white font-extrabold px-4 py-1.5 rounded-lg text-lg leading-none shadow-sm">
+          <i class="fas fa-calendar-alt text-sm opacity-80"></i>
+          <?= htmlspecialchars($periodLabel) ?>
+        </span>
+        <span class="text-gray-400 text-sm">
+          <?= count($officers) ?> petugas piket &middot;
+          <?= $hariKerja ?> hari kerja &middot;
+          <?= $totalPST ?> pengunjung PST
+        </span>
+      </div>
     </div>
 
     <?php if (empty($officers)): ?>
@@ -332,9 +348,17 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
     <!-- TAB: INPUT KINERJA -->
     <div id="tab-kinerja" class="tab-panel <?= $activeTab==='kinerja'?'active':'' ?>">
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-sm text-blue-800">
-        <i class="fas fa-info-circle mr-1"></i>
-        Masukkan <strong>nilai CKP / kinerja</strong> (1–100) untuk setiap petugas yang piket bulan ini.
-        Bobot: <strong>30%</strong>.
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <i class="fas fa-info-circle mr-1"></i>
+            Masukkan <strong>nilai CKP / kinerja</strong> (1–100) untuk setiap petugas yang piket bulan ini.
+            Bobot: <strong>30%</strong>.
+          </div>
+          <div class="inline-flex items-center gap-1.5 bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm shrink-0 shadow-sm">
+            <i class="fas fa-calendar-check text-xs opacity-80"></i>
+            <?= htmlspecialchars($periodLabel) ?>
+          </div>
+        </div>
       </div>
 
       <div class="space-y-3">
@@ -378,9 +402,17 @@ $periodLabel = $bulanIndo[$selMonth] . ' ' . $selYear;
     <!-- TAB: TIM PENILAI -->
     <div id="tab-tim" class="tab-panel <?= $activeTab==='tim'?'active':'' ?>">
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-800">
-        <i class="fas fa-user-check mr-1"></i>
-        Pilih nama Anda, lalu isi <strong>Kerja Sama</strong>, <strong>Inovatif</strong>, dan <strong>Penampilan</strong>
-        (masing-masing 1–100) untuk setiap petugas. Bobot masing-masing: <strong>10%</strong>.
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <i class="fas fa-user-check mr-1"></i>
+            Pilih nama Anda, lalu isi <strong>Kerja Sama</strong>, <strong>Inovatif</strong>, dan <strong>Penampilan</strong>
+            (masing-masing 1–100) untuk setiap petugas. Bobot masing-masing: <strong>10%</strong>.
+          </div>
+          <div class="inline-flex items-center gap-1.5 bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm shrink-0 shadow-sm">
+            <i class="fas fa-calendar-check text-xs opacity-80"></i>
+            <?= htmlspecialchars($periodLabel) ?>
+          </div>
+        </div>
       </div>
 
       <!-- Select penilai -->

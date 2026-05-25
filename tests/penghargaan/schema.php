@@ -6,7 +6,7 @@
  * Jalankan di KEDUA environment:
  *   php tests/penghargaan/run.php schema
  */
-require_once __DIR__ . '/T.php';
+require_once __DIR__ . '/../_lib/T.php';
 
 // Sambungkan ke DB via config yang sama dengan aplikasi
 chdir(dirname(__DIR__, 2));

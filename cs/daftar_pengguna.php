@@ -47,8 +47,11 @@ $jenisMeta = [
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <!-- safelist amber classes agar Tailwind CDN tidak prune -->
-    <div class="hidden bg-amber-100 text-amber-800 border-amber-200 border-l-4 border-l-amber-500"></div>
+    <!-- safelist amber & rose & violet & indigo classes agar Tailwind CDN tidak prune -->
+    <div class="hidden bg-amber-100 text-amber-800 border-amber-200 border-l-4 border-l-amber-500
+                bg-rose-100 text-rose-800 border-rose-200 bg-rose-50 text-rose-700 accent-rose-500 focus:ring-rose-400
+                bg-violet-100 text-violet-800 border-violet-200
+                bg-indigo-100 text-indigo-800 border-indigo-200"></div>
     <style>
         .score-1,.score-2  { background:#fee2e2;color:#dc2626; }
         .score-3,.score-4  { background:#ffedd5;color:#ea580c; }
@@ -267,7 +270,25 @@ $jenisMeta = [
                 <td class="border p-2"><?= htmlspecialchars($row['tanggal']) ?></td>
                 <td class="border p-2"><?= htmlspecialchars($row['nama']) ?></td>
                 <td class="border p-2"><?= htmlspecialchars($row['email'] ?? '') ?></td>
-                <td class="border p-2 text-xs"><?= htmlspecialchars($row['jenis_pelayanan'] ?? '') ?></td>
+                <td class="border p-2 text-xs">
+                    <?php
+                    $jp        = $row['jenis_pelayanan'] ?? '';
+                    $jpStyles  = [
+                        'Pengaduan'             => ['bg-rose-100 text-rose-800 border-rose-200',     'fa-triangle-exclamation'],
+                        'Permintaan Data'       => ['bg-blue-100 text-blue-800 border-blue-200',     'fa-database'],
+                        'Konsultasi Statistik'  => ['bg-indigo-100 text-indigo-800 border-indigo-200','fa-comments'],
+                        'Rekomendasi Statistik' => ['bg-violet-100 text-violet-800 border-violet-200','fa-stamp'],
+                    ];
+                    if ($jp && isset($jpStyles[$jp])):
+                        [$cls, $icon] = $jpStyles[$jp];
+                    ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border <?= $cls ?>">
+                            <i class="fas <?= $icon ?> text-[10px]"></i><?= htmlspecialchars($jp) ?>
+                        </span>
+                    <?php else: ?>
+                        <?= htmlspecialchars($jp) ?>
+                    <?php endif; ?>
+                </td>
                 <td class="border p-2 text-center">
                     <?php if ($hasPenilaian): ?>
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
@@ -444,15 +465,25 @@ $jenisMeta = [
                             <input type="radio" name="edit-jenis-pelayanan" value="Rekomendasi Statistik" class="accent-blue-500">
                             <span class="text-xs">Rekomendasi Statistik</span>
                         </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="edit-jenis-pelayanan" value="Pengaduan" class="accent-rose-500">
+                            <span class="text-xs">Pengaduan</span>
+                        </label>
                     </div>
                 </div>
-                <div>
-                    <label class="block mb-1 font-medium text-gray-700">Data yang Dibutuhkan</label>
+                <div id="edit-data-wrap">
+                    <label class="block mb-1 font-medium text-gray-700"><span id="edit-data-label">Data yang Dibutuhkan</span></label>
                     <div id="edit-data-container" class="space-y-2 mb-2"></div>
                     <button type="button" id="edit-btn-tambah"
                             class="text-blue-600 border border-blue-400 px-3 py-1 rounded text-xs hover:bg-blue-50">
                         + Tambah Data
                     </button>
+                </div>
+                <div id="edit-pengaduan-wrap" class="hidden">
+                    <label class="block mb-1 font-medium text-gray-700">Detail Pengaduan</label>
+                    <textarea id="edit-pengaduan-text" rows="4"
+                              placeholder="Detail pengaduan dari pengguna…"
+                              class="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-rose-400"></textarea>
                 </div>
             </div>
 
@@ -529,6 +560,25 @@ function escHtml(str) {
     return String(str || '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Normalise Indonesian phone → wa.me URL  (08xx → 628xx, +62 stripped)
+function buildWaUrl(telepon) {
+    if (!telepon || telepon === '-') return '';
+    var digits = String(telepon).replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.charAt(0) === '0')      digits = '62' + digits.slice(1);
+    else if (digits.slice(0,2) !== '62') digits = '62' + digits;
+    return 'https://wa.me/' + digits;
+}
+
+function buildWaBtn(telepon) {
+    var url = buildWaUrl(telepon);
+    if (!url) return '';
+    var display = String(telepon || '').replace(/\s/g, '');
+    return "<a href='" + escHtml(url) + "' target='_blank' rel='noopener' " +
+           "class='inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors'>" +
+           "<i class='fab fa-whatsapp'></i> " + escHtml(display) + "</a>";
 }
 
 // ── QR Code ─────────────────────────────────────────────────────────────────
@@ -674,6 +724,7 @@ function buildExpandDetail(tr, pData, isPST) {
             "<i class='fas fa-edit mr-1'></i>Edit</button>" +
             "<button class='bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs' " +
             "onclick='deleteUser(" + id + ")'><i class='fas fa-trash-alt mr-1'></i>Hapus</button>" +
+            buildWaBtn(telepon) +
             "</div></div>";
     }
 
@@ -788,7 +839,8 @@ function buildExpandDetail(tr, pData, isPST) {
         "onclick='openEditModal($(\"tr.expandable-row[data-id=" + id + "]\"))'>" +
         "<i class='fas fa-edit'></i>Edit</button>" +
         "<button class='inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition-colors' onclick='deleteUser(" + id + ")'>" +
-        "<i class='fas fa-trash-alt'></i>Hapus</button>";
+        "<i class='fas fa-trash-alt'></i>Hapus</button>" +
+        buildWaBtn(telepon);
 
     if (hasPes && tokenPes) {
         var pesUrl2 = APP_URL + '/pes/?token=' + tokenPes;
@@ -808,6 +860,25 @@ function buildExpandDetail(tr, pData, isPST) {
         : "<span class='inline-flex items-center gap-1.5 bg-slate-300 text-slate-500 px-3 py-1.5 rounded-md text-xs font-medium cursor-not-allowed' title='Token belum dibuat'>" +
           "<i class='fas fa-file-lines'></i> Detail Lengkap</span>";
 
+    // Pengaduan block (only when jenis_pelayanan = Pengaduan)
+    var pengaduanHtml = '';
+    if (jenisPelayanan === 'Pengaduan') {
+        var rawDd = tr.attr('data-data-dibutuhkan') || '';
+        var ddTxt = '';
+        try {
+            var ddArr = rawDd ? JSON.parse(rawDd) : [];
+            if (Array.isArray(ddArr) && ddArr.length && ddArr[0].data) ddTxt = ddArr[0].data;
+        } catch(e) {}
+        pengaduanHtml =
+            "<div class='mt-3 p-3 rounded-lg border border-rose-200 bg-rose-50'>" +
+              "<div class='flex items-center gap-1.5 mb-1.5'>" +
+                "<i class='fas fa-triangle-exclamation text-rose-500'></i>" +
+                "<span class='text-xs font-bold uppercase tracking-wide text-rose-700'>Detail Pengaduan</span>" +
+              "</div>" +
+              "<p class='text-sm text-gray-800 whitespace-pre-line'>" + (ddTxt ? escHtml(ddTxt) : "<span class='text-gray-400 italic'>— tidak diisi —</span>") + "</p>" +
+            "</div>";
+    }
+
     return "<div class='bg-gray-50 border-t border-gray-200 p-3 sm:p-4 expand-detail text-sm' style='display:none;'>" +
         "<div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 mb-3'>" +
         field('Jenis Kelamin', jk) + field('Telepon', telepon) +
@@ -816,6 +887,7 @@ function buildExpandDetail(tr, pData, isPST) {
         (jenisPelayanan ? field('Jenis Pelayanan', jenisPelayanan) : '') +
         field('Keperluan', keperluan, 'sm:col-span-2 md:col-span-3') +
         "</div>" +
+        pengaduanHtml +
         "<div class='flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-200'>" + row1 + "</div>" +
         "<div class='flex flex-wrap gap-2 mt-2 pt-2 border-t border-gray-100'>" + row2 + "</div>" +
         "</div>";
@@ -1169,20 +1241,28 @@ function openEditModal(tr) {
             inpPek.classList.remove('hidden');
         }
 
-        // Data yang dibutuhkan
-        var container = document.getElementById('edit-data-container');
+        // Data yang dibutuhkan / Detail pengaduan
+        var container   = document.getElementById('edit-data-container');
+        var rawData     = tr.attr('data-data-dibutuhkan') || '';
+        var isPengaduan = jpVal === 'Pengaduan';
+        toggleEditPengaduanMode(isPengaduan);
+
+        var parsedItems = [];
+        try { parsedItems = rawData ? JSON.parse(rawData) : []; } catch(e) { parsedItems = []; }
+        if (!Array.isArray(parsedItems)) parsedItems = [];
+
         container.innerHTML = '';
-        var rawData = tr.attr('data-data-dibutuhkan') || '';
-        try {
-            var items = rawData ? JSON.parse(rawData) : [];
-            if (!Array.isArray(items) || items.length === 0) {
+        if (isPengaduan) {
+            document.getElementById('edit-pengaduan-text').value = parsedItems[0] && parsedItems[0].data ? parsedItems[0].data : '';
+        } else {
+            if (parsedItems.length === 0) {
                 container.appendChild(createEditRecord());
             } else {
-                items.forEach(function(it) {
+                parsedItems.forEach(function(it) {
                     container.appendChild(createEditRecord(it.data, it.tahun_dari, it.tahun_sampai));
                 });
             }
-        } catch(e) { container.appendChild(createEditRecord()); }
+        }
     }
 
     document.getElementById('editModal').classList.remove('hidden');
@@ -1218,15 +1298,28 @@ function submitEditModal() {
         var pekerjaan = selPek.value === '_lainnya' ? inpPek.value.trim() : selPek.value;
         if (!pekerjaan) { alert('Pekerjaan wajib diisi.'); selPek.focus(); return; }
 
-        var records = [];
-        document.querySelectorAll('#edit-data-container .edit-record-row').forEach(function(row) {
-            var nm = row.querySelector('.edit-data-nama').value.trim();
-            if (!nm) return;
-            var td = parseInt(row.querySelector('.edit-tahun-dari').value)  || 0;
-            var ts = parseInt(row.querySelector('.edit-tahun-sampai').value) || 0;
-            records.push({ data: nm, tahun_dari: td, tahun_sampai: ts });
-        });
-        dataDibutuhkan = JSON.stringify(records);
+        var jpChecked  = document.querySelector('input[name="edit-jenis-pelayanan"]:checked');
+        var isPengaduan = jpChecked && jpChecked.value === 'Pengaduan';
+
+        if (isPengaduan) {
+            var pengaduanText = document.getElementById('edit-pengaduan-text').value.trim();
+            if (!pengaduanText) {
+                alert('Detail pengaduan wajib diisi.');
+                document.getElementById('edit-pengaduan-text').focus();
+                return;
+            }
+            dataDibutuhkan = JSON.stringify([{ data: pengaduanText, tahun_dari: 0, tahun_sampai: 0 }]);
+        } else {
+            var records = [];
+            document.querySelectorAll('#edit-data-container .edit-record-row').forEach(function(row) {
+                var nm = row.querySelector('.edit-data-nama').value.trim();
+                if (!nm) return;
+                var td = parseInt(row.querySelector('.edit-tahun-dari').value)  || 0;
+                var ts = parseInt(row.querySelector('.edit-tahun-sampai').value) || 0;
+                records.push({ data: nm, tahun_dari: td, tahun_sampai: ts });
+            });
+            dataDibutuhkan = JSON.stringify(records);
+        }
     } else {
         var selPek2  = document.getElementById('edit-pekerjaan-select');
         var inpPek2  = document.getElementById('edit-pekerjaan-lainnya');
@@ -1299,6 +1392,17 @@ document.getElementById('edit-pekerjaan-select').addEventListener('change', func
     var inp = document.getElementById('edit-pekerjaan-lainnya');
     inp.classList.toggle('hidden', this.value !== '_lainnya');
     if (this.value === '_lainnya') inp.focus();
+});
+
+// Toggle Pengaduan mode (textarea) vs Data Dibutuhkan (list)
+function toggleEditPengaduanMode(isPengaduan) {
+    document.getElementById('edit-data-wrap').classList.toggle('hidden', isPengaduan);
+    document.getElementById('edit-pengaduan-wrap').classList.toggle('hidden', !isPengaduan);
+}
+document.querySelectorAll('input[name="edit-jenis-pelayanan"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+        toggleEditPengaduanMode(this.value === 'Pengaduan');
+    });
 });
 
 // Toggle keperluan textarea

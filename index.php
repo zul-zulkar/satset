@@ -1,24 +1,21 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Buku Tamu</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        .stat-num { font-variant-numeric: tabular-nums; }
-        @media (min-width: 768px) {
-            body { height: 100dvh; overflow: hidden; }
-        }
-        #qr-disabilitas canvas, #qr-disabilitas img,
-        #qr-umum canvas, #qr-umum img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto !important;
-            height: auto !important;
-        }
-    </style>
+<?php
+$page_title  = 'Buku Tamu';
+$head_extras = ['qrcodejs'];
+include __DIR__ . '/partials/_head.php';
+?>
+<style>
+    .stat-num { font-variant-numeric: tabular-nums; }
+    @media (min-width: 768px) {
+        body { height: 100dvh; overflow: hidden; }
+    }
+    #qr-disabilitas canvas, #qr-disabilitas img,
+    #qr-umum canvas, #qr-umum img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto !important;
+        height: auto !important;
+    }
+</style>
 </head>
 <body class="bg-gray-950 text-white flex flex-col p-3 md:p-4 gap-3 md:gap-4">
 

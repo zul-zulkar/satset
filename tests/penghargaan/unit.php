@@ -4,7 +4,7 @@
  * Tidak memerlukan koneksi DB atau server HTTP.
  * Menguji formula yang sama persis dengan yang ada di penghargaan/index.php.
  */
-require_once __DIR__ . '/T.php';
+require_once __DIR__ . '/../_lib/T.php';
 
 // ─── Salin fungsi dari index.php agar bisa diuji secara terisolasi ───────────
 
