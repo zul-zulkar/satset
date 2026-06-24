@@ -1,0 +1,32 @@
+# =====================================================================
+#  FUNNEL → public/
+#
+#  File ini membuat folder aplikasi (mis. .../satset atau .../pst)
+#  menyajikan isi folder public/ TANPA menampilkan "/public" di URL.
+#
+#  Berkat ini, struktur app/ (privat) + public/ (web) tetap utuh,
+#  dan URL tetap rapi:  https://domain/<app>/...
+#
+#  Tidak ada RewriteBase → aman dipakai di path mana pun
+#  (/satset saat lokal, /pst saat produksi) tanpa diubah.
+# =====================================================================
+
+Options -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Permintaan yang sudah menunjuk ke dalam public/ → biarkan apa adanya
+    # (mencegah loop pada pass kedua setelah internal rewrite).
+    RewriteRule ^public/ - [L]
+
+    # Folder root aplikasi → DirectoryIndex public/ (index.php)
+    RewriteRule ^$ public/ [L]
+
+    # Semua permintaan lain dialirkan ke dalam public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Cegah kebocoran "/public" saat mod_dir menambah trailing slash pada folder.
+# Trailing slash ditambahkan oleh rewrite di public/.htaccess, bukan mod_dir.
+DirectorySlash Off

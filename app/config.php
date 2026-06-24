@@ -14,13 +14,17 @@ define('ENV', 'local');
 //
 //  APP_URL  : URL lengkap aplikasi (tanpa trailing slash)
 //  APP_BASE : hanya bagian path-nya (tanpa trailing slash)
-//             → kosongkan jika aplikasi berada di root domain
+//             → samakan dengan nama folder aplikasi di hosting
+//
+//  Aplikasi ini hidup di sub-path agar satu domain bisa menampung banyak
+//  aplikasi:  satset.statsbali.id/pst , satset.statsbali.id/<app-lain> , dst.
+//  (lihat DEPLOY-CPANEL.md). Untuk pindah path, cukup ubah 'base' di sini.
 //
 //  Contoh lokal   : APP_URL = 'http://192.168.2.54/satset'
 //                   APP_BASE = '/satset'
 //
-//  Contoh hosting : APP_URL = 'https://satset.wuaze.com'
-//                   APP_BASE = '' (kosong)
+//  Contoh hosting : APP_URL = 'https://satset.statsbali.id/pst'
+//                   APP_BASE = '/pst'
 //
 $_urlConf = [
     'local' => [
@@ -28,8 +32,8 @@ $_urlConf = [
         'base' => '/satset',
     ],
     'production' => [
-        'url'  => 'https://satset.statsbali.id',
-        'base' => '',                              // app di root domain → kosong
+        'url'  => 'https://satset.statsbali.id/pst',
+        'base' => '/pst',                          // ← nama folder aplikasi di hosting
     ],
 ];
 

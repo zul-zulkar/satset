@@ -1,2 +1,26 @@
 Options +FollowSymLinks -MultiViews
 DirectoryIndex index.php index.html
+
+# Jangan layani file konfigurasi PHP per-direktori lewat HTTP.
+<FilesMatch "^\.user\.ini$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Folder yang punya index.php → sajikan langsung index.php-nya,
+    # tanpa redirect penambah trailing-slash dari mod_dir. Ini menjaga
+    # clean-URL berbasis folder (mis. /laporan/bulan, /penilaian) tetap
+    # bekerja saat aplikasi berada di sub-path lewat funnel, sekaligus
+    # mencegah "/public" bocor ke URL.
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_FILENAME}/index.php -f
+    RewriteRule ^(.+[^/])$ $1/index.php [L]
+</IfModule>
