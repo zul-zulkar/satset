@@ -81,6 +81,9 @@ $excludeRows = $st->get_result()->fetch_all(MYSQLI_ASSOC); $st->close();
 $excludeSet = [];
 foreach ($excludeRows as $e) $excludeSet[$e['triwulan'] . ':' . $e['antrian_id']] = true;
 
+$qKeys = [];
+for ($i = 1; $i <= 16; $i++) $qKeys[] = "q$i";
+
 // ── Universe PST & seleksi ─────────────────────────────────────────────────────
 $isPST = fn($r) => in_array($r['jenis'], ['whatsapp', 'surat']) || (!empty($r['kunjungan_pst']) && $r['kunjungan_pst'] == 1);
 $pstRows = array_values(array_filter($allAntrian, $isPST));
@@ -90,10 +93,17 @@ $included    = [];    // baris yang masuk analisis
 foreach ($pstRows as $r) {
     $tw  = quarterOf($r['tanggal']);
     $exc = isset($excludeSet["$tw:{$r['id']}"]);
+    $pen = $penByAntrian[$r['id']] ?? null;
     $r['_tw']       = $tw;
     $r['_excluded'] = $exc;
-    $r['_survei']   = isset($penByAntrian[$r['id']]);
+    $r['_survei']   = $pen !== null;
     $r['_pes']      = isset($pesByAntrian[$r['id']]);
+    if ($pen !== null) {
+        $vals = array_filter(array_map(fn($q) => $pen[$q], $qKeys), fn($v) => $v !== null && $v !== '');
+        $r['_avg'] = count($vals) ? round(array_sum($vals) / count($vals), 2) : null;
+    } else {
+        $r['_avg'] = null;
+    }
     $respondents[]  = $r;
     if (!$exc) $included[] = $r;
 }
@@ -101,8 +111,6 @@ $includedIds = array_column($included, 'id');
 $includedSet = array_flip($includedIds);
 
 // ── Indeks IKM / IPKP / IPAK ────────────────────────────────────────────────────
-$qKeys = [];
-for ($i = 1; $i <= 16; $i++) $qKeys[] = "q$i";
 $qLabels = [
     'q1' => 'Informasi layanan tersedia',        'q2' => 'Persyaratan mudah dipenuhi',
     'q3' => 'Prosedur mudah diikuti',            'q4' => 'Jangka waktu sesuai',
@@ -281,6 +289,15 @@ include __DIR__ . '/../../app/partials/_head.php';
         <div style="height:380px"><canvas id="nrrChart"></canvas></div>
     </div>
 
+    <!-- Toggle mode tampilan -->
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold text-gray-700 text-lg">Distribusi Demografi &amp; Layanan</h2>
+        <div class="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm" id="modeToggle">
+            <button type="button" data-mode="count" class="mode-btn px-3 py-1.5 font-medium bg-blue-600 text-white">Jumlah</button>
+            <button type="button" data-mode="percent" class="mode-btn px-3 py-1.5 font-medium bg-white text-gray-600">Persentase</button>
+        </div>
+    </div>
+
     <!-- Grid distribusi -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <?php foreach ($charts as [$id, $title, $type, $data]): ?>
@@ -316,16 +333,18 @@ include __DIR__ . '/../../app/partials/_head.php';
                         <th class="py-2 pr-3">Nama</th>
                         <th class="py-2 pr-3">Jenis</th>
                         <th class="py-2 pr-3 text-center">Survei</th>
+                        <th class="py-2 pr-3 text-center">Rata² Nilai</th>
                         <th class="py-2 pr-3 text-center">PES</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($respondents)): ?>
-                        <tr><td colspan="7" class="py-6 text-center text-gray-400">Tidak ada responden PST pada periode ini.</td></tr>
+                        <tr><td colspan="8" class="py-6 text-center text-gray-400">Tidak ada responden PST pada periode ini.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($respondents as $r):
                         $jbadge = ['umum' => 'bg-blue-100 text-blue-700', 'disabilitas' => 'bg-purple-100 text-purple-700',
                                    'whatsapp' => 'bg-green-100 text-green-700', 'surat' => 'bg-amber-100 text-amber-700'];
+                        $avgTx = $r['_avg'] !== null ? ikmGrade($r['_avg'] * 10)[2] : 'text-gray-300';
                     ?>
                     <tr class="border-b last:border-0 <?= $r['_excluded'] ? 'opacity-50' : '' ?>" data-row="<?= $r['id'] ?>">
                         <td class="py-2 pr-3">
@@ -339,6 +358,7 @@ include __DIR__ . '/../../app/partials/_head.php';
                             <span class="text-xs px-2 py-0.5 rounded-full <?= $jbadge[$r['jenis']] ?? 'bg-gray-100 text-gray-600' ?>"><?= htmlspecialchars($r['jenis']) ?></span>
                         </td>
                         <td class="py-2 pr-3 text-center"><?= $r['_survei'] ? '✅' : '<span class="text-gray-300">–</span>' ?></td>
+                        <td class="py-2 pr-3 text-center font-semibold <?= $avgTx ?>"><?= $r['_avg'] !== null ? number_format($r['_avg'], 2) : '–' ?></td>
                         <td class="py-2 pr-3 text-center"><?= $r['_pes'] ? '✅' : '<span class="text-gray-300">–</span>' ?></td>
                     </tr>
                     <?php endforeach; ?>
@@ -352,18 +372,27 @@ include __DIR__ . '/../../app/partials/_head.php';
 const PALETTE = ['#3b82f6','#14b8a6','#8b5cf6','#f59e0b','#ef4444','#10b981','#6366f1','#ec4899','#06b6d4','#84cc16','#f97316','#a855f7'];
 const charts = <?= json_encode(array_map(fn($c) => ['id' => $c[0], 'type' => $c[2], 'data' => $c[3]], $charts), JSON_UNESCAPED_UNICODE) ?>;
 
+let currentMode = 'count'; // 'count' | 'percent'
+const chartInstances = {};
+
+function valuesForMode(rawData, mode) {
+    const raw = Object.values(rawData);
+    if (mode !== 'percent') return raw;
+    const total = raw.reduce((a, b) => a + b, 0) || 1;
+    return raw.map(v => Math.round((v / total) * 1000) / 10);
+}
+
 function makeChart(cfg) {
     const el = document.getElementById(cfg.id);
     if (!el) return;
     const labels = Object.keys(cfg.data);
-    const values = Object.values(cfg.data);
     const isDoughnut = cfg.type === 'doughnut';
-    new Chart(el, {
+    const chart = new Chart(el, {
         type: cfg.type,
         data: {
             labels,
             datasets: [{
-                data: values,
+                data: valuesForMode(cfg.data, currentMode),
                 backgroundColor: isDoughnut ? labels.map((_, i) => PALETTE[i % PALETTE.length]) : '#3b82f6',
                 borderRadius: isDoughnut ? 0 : 4,
                 borderWidth: isDoughnut ? 2 : 0,
@@ -373,12 +402,49 @@ function makeChart(cfg) {
         options: {
             indexAxis: isDoughnut ? 'x' : 'y',
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: isDoughnut, position: 'bottom' } },
-            scales: isDoughnut ? {} : { x: { beginAtZero: true, ticks: { precision: 0 } } }
+            plugins: {
+                legend: { display: isDoughnut, position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const v = ctx.parsed.x !== undefined ? ctx.parsed.x : ctx.parsed;
+                            const txt = currentMode === 'percent' ? `${v}%` : `${v} responden`;
+                            return `${ctx.label}: ${txt}`;
+                        }
+                    }
+                }
+            },
+            scales: isDoughnut ? {} : {
+                x: {
+                    beginAtZero: true,
+                    max: currentMode === 'percent' ? 100 : undefined,
+                    ticks: { callback: v => currentMode === 'percent' ? v + '%' : v }
+                }
+            }
         }
     });
+    chartInstances[cfg.id] = { chart, raw: cfg.data, isDoughnut };
 }
 charts.forEach(makeChart);
+
+function setMode(mode) {
+    currentMode = mode;
+    Object.values(chartInstances).forEach(({ chart, raw, isDoughnut }) => {
+        chart.data.datasets[0].data = valuesForMode(raw, mode);
+        if (!isDoughnut) chart.options.scales.x.max = mode === 'percent' ? 100 : undefined;
+        chart.update();
+    });
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        const active = btn.dataset.mode === mode;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('bg-white', !active);
+        btn.classList.toggle('text-gray-600', !active);
+    });
+}
+document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
 
 // NRR per unsur (1-4)
 const nrrData = <?= json_encode($nrrChartData, JSON_UNESCAPED_UNICODE) ?>;
