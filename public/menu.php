@@ -303,6 +303,18 @@ include __DIR__ . '/../app/partials/_head.php';
                     </div>
                 </a>
 
+                <a href="<?= APP_BASE ?>/analisis" target="_blank" class="card block rounded-2xl p-5 sm:p-6
+                    bg-gradient-to-br from-emerald-600 to-teal-700
+                    border border-emerald-500/30">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-wrap text-4xl sm:text-5xl flex-shrink-0">📈</div>
+                        <div>
+                            <div class="font-bold text-base sm:text-lg">Analisis Kepuasan</div>
+                            <div class="text-emerald-100 text-xs mt-1">IKM/IPKP/IPAK & demografi pengguna, periodik tahunan/triwulanan</div>
+                        </div>
+                    </div>
+                </a>
+
             </div>
         </section>
 

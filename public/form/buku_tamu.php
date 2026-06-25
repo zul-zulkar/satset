@@ -22,6 +22,8 @@ function renderForm($jenis, $judul) {
     $validJenisPelayanan = ['Permintaan Data', 'Konsultasi Statistik', 'Rekomendasi Statistik'];
     $pekerjaanOptions = ['Pelajar/Mahasiswa', 'Peneliti/Dosen', 'ASN/TNI/Polri',
                          'Pegawai BUMN/BUMD', 'Pegawai Swasta', 'Wiraswasta', 'Lainnya'];
+    $validJenisDisabilitas = ['Tuna Netra', 'Tuna Rungu/Wicara', 'Tuna Daksa',
+                              'Tuna Grahita', 'Disabilitas Mental', 'Disabilitas Ganda', 'Lainnya'];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $old  = $_POST;
@@ -47,6 +49,15 @@ function renderForm($jenis, $judul) {
                 if (!$kunjungan_pst && $keperluan === '') {
                     $errorMsg = 'Jelaskan keperluan kunjungan Anda.';
                 }
+            }
+        }
+
+        // ── Ragam disabilitas (khusus form disabilitas) ─────────────────
+        $jenis_disabilitas = null;
+        if ($errorMsg === '' && $jenis === 'disabilitas') {
+            $jenis_disabilitas = $_POST['jenis_disabilitas'] ?? '';
+            if (!in_array($jenis_disabilitas, $validJenisDisabilitas)) {
+                $errorMsg = 'Pilih ragam disabilitas.';
             }
         }
 
@@ -114,16 +125,16 @@ function renderForm($jenis, $judul) {
                     (nama, email, telepon, instansi, jk, jumlah_orang, keperluan,
                      kunjungan_pst, pendidikan, kelompok_umur, pekerjaan,
                      pemanfaatan_data, data_dibutuhkan, jenis_pelayanan,
-                     jenis, nomor, tanggal, status, token)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', ?)"
+                     jenis, jenis_disabilitas, nomor, tanggal, status, token)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', ?)"
             );
             $stmt->bind_param(
-                "sssssisisssssssiss",
+                "sssssisissssssssiss",
                 $_POST['nama'], $_POST['email'], $_POST['telepon'], $_POST['instansi'],
                 $_POST['jk'], $jumlah, $keperluan,
                 $kunjungan_pst, $pendidikan, $kelompok_umur, $pekerjaan,
                 $pemanfaatan, $dataJson, $jenis_pelayanan,
-                $jenis, $nomor_baru, $tanggal, $token
+                $jenis, $jenis_disabilitas, $nomor_baru, $tanggal, $token
             );
             $stmt->execute();
             $nomorSaya     = $nomor_baru;
@@ -197,6 +208,23 @@ function renderForm($jenis, $judul) {
                            value="<?= htmlspecialchars($old['jumlah_orang'] ?? '1') ?>"
                            class="w-full border p-2 rounded">
                 </div>
+
+                <?php if ($jenis === 'disabilitas'): ?>
+                <!-- Ragam Disabilitas (khusus form disabilitas) -->
+                <div>
+                    <label class="block mb-1 font-medium">Ragam Disabilitas <span class="text-red-500">*</span></label>
+                    <select id="jenis_disabilitas" name="jenis_disabilitas" required
+                            class="w-full border p-2 rounded bg-white">
+                        <option value="">— Pilih ragam disabilitas —</option>
+                        <?php foreach ($validJenisDisabilitas as $jd): ?>
+                            <option value="<?= htmlspecialchars($jd) ?>"
+                                <?= ($old['jenis_disabilitas'] ?? '') === $jd ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($jd) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
 
                 <!-- Keperluan -->
                 <div>
