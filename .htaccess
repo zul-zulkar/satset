@@ -1,32 +1,30 @@
 # =====================================================================
-#  FUNNEL → public/
+#  Konfigurasi Apache (lokal/XAMPP, atau jika kelak pindah ke hosting Apache).
 #
-#  File ini membuat folder aplikasi (mis. .../satset atau .../pst)
-#  menyajikan isi folder public/ TANPA menampilkan "/public" di URL.
+#  PENTING: hosting produksi saat ini memakai **nginx**, yang TIDAK PERNAH
+#  membaca .htaccess. Karena itu aplikasi sengaja dirancang agar berjalan
+#  TANPA bergantung pada berkas ini:
 #
-#  Berkat ini, struktur app/ (privat) + public/ (web) tetap utuh,
-#  dan URL tetap rapi:  https://domain/<app>/...
+#    - Tidak ada mod_rewrite / funnel. Struktur folder = struktur URL.
+#    - Clean-URL (mis. /laporan/bulan) memakai folder berisi index.php,
+#      yang dilayani baik oleh Apache (DirectoryIndex) maupun nginx (index).
 #
-#  Tidak ada RewriteBase → aman dipakai di path mana pun
-#  (/satset saat lokal, /pst saat produksi) tanpa diubah.
+#  Jadi berkas ini murni penyempurna di Apache — bukan syarat agar app jalan.
 # =====================================================================
 
-Options -MultiViews
+Options +FollowSymLinks -MultiViews
+DirectoryIndex index.php index.html
 
-<IfModule mod_rewrite.c>
-    RewriteEngine On
+# Jangan tampilkan daftar isi folder.
+Options -Indexes
 
-    # Permintaan yang sudah menunjuk ke dalam public/ → biarkan apa adanya
-    # (mencegah loop pada pass kedua setelah internal rewrite).
-    RewriteRule ^public/ - [L]
-
-    # Folder root aplikasi → DirectoryIndex public/ (index.php)
-    RewriteRule ^$ public/ [L]
-
-    # Semua permintaan lain dialirkan ke dalam public/
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
-
-# Cegah kebocoran "/public" saat mod_dir menambah trailing slash pada folder.
-# Trailing slash ditambahkan oleh rewrite di public/.htaccess, bukan mod_dir.
-DirectorySlash Off
+# Jangan layani berkas konfigurasi PHP per-direktori lewat HTTP.
+<FilesMatch "^\.user\.ini$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>

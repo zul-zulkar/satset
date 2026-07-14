@@ -18,7 +18,12 @@ define('ENV', 'local');
 //
 //  Aplikasi ini hidup di sub-path agar satu domain bisa menampung banyak
 //  aplikasi:  satset.statsbali.id/pst , satset.statsbali.id/<app-lain> , dst.
+//  Nama folder aplikasi di hosting HARUS sama dengan 'base' di bawah.
 //  (lihat DEPLOY-CPANEL.md). Untuk pindah path, cukup ubah 'base' di sini.
+//
+//  Catatan: hosting memakai nginx (tanpa .htaccess/mod_rewrite), sehingga
+//  struktur folder = struktur URL. Folder aplikasi langsung berisi index.php,
+//  dan kode privat ada di subfolder app/.
 //
 //  Contoh lokal   : APP_URL = 'http://192.168.2.54/satset'
 //                   APP_BASE = '/satset'

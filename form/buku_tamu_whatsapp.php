@@ -1,0 +1,725 @@
+<?php
+/**
+ * Form Buku Tamu WhatsApp — dipakai oleh whatsapp.php
+ * Modes:
+ *   GET (no token)          → form kosong
+ *   POST (no token)         → validasi + INSERT → redirect ke ?token=...
+ *   GET ?token=...          → preview read-only + tombol Revisi (2 jam)
+ *   GET ?token=...&revisi=1 → form pre-filled untuk revisi
+ *   POST ?token=...&revisi=1→ validasi + UPDATE → redirect ke ?token=...
+ */
+function renderFormWhatsapp($judul) {
+    include __DIR__ . '/../app/db.php';
+
+    $tanggal  = date('Y-m-d');
+    $token    = trim($_GET['token'] ?? '');
+    $revisi   = !empty($_GET['revisi']) && !empty($token);
+    $errorMsg = '';
+    $old      = [];
+    $antrian  = null;
+
+    // ── Fetch existing record ────────────────────────────────────────────────
+    if ($token) {
+        $st = $mysqli->prepare("SELECT * FROM antrian WHERE token = ? AND jenis = 'whatsapp' LIMIT 1");
+        $st->bind_param("s", $token);
+        $st->execute();
+        $antrian = $st->get_result()->fetch_assoc();
+        $st->close();
+    }
+
+    // ── Handle POST ──────────────────────────────────────────────────────────
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $old = $_POST;
+
+        $nama          = trim($_POST['nama']            ?? '');
+        $email         = trim($_POST['email']           ?? '');
+        $telepon       = trim($_POST['telepon']         ?? '');
+        $jk            = $_POST['jk']                  ?? '';
+        $pendidikan    = $_POST['pendidikan']           ?? '';
+        $kelompok_umur = $_POST['kelompok_umur']        ?? '';
+        $pekerjaan     = trim($_POST['pekerjaan']       ?? '');
+        $instansi      = trim($_POST['instansi']        ?? '');
+        $pemanfaatan     = $_POST['pemanfaatan_data']     ?? '';
+        $jenis_pelayanan = $_POST['jenis_pelayanan']      ?? '';
+        $dataNama        = $_POST['data_nama']            ?? [];
+        $tahunDari     = $_POST['tahun_dari']           ?? [];
+        $tahunSampai   = $_POST['tahun_sampai']         ?? [];
+
+        $validJk             = ['L', 'P'];
+        $validPendidikan     = ['SLTA/Sederajat', 'D1/D2/D3', 'D4/S1', 'S2', 'S3'];
+        $validUmur           = ['di bawah 17 tahun', '17 - 25 tahun', '26 - 34 tahun', '35 - 44 tahun', '45 - 54 tahun', '55 - 65 tahun', 'di atas 65 tahun'];
+        $validPemanfaatan    = ['Tugas Sekolah/Tugas Kuliah', 'Pemerintahan', 'Komersial', 'Penelitian', 'Lainnya'];
+        $validJenisPelayanan = ['Permintaan Data', 'Konsultasi Statistik', 'Rekomendasi Statistik', 'Pengaduan'];
+
+        if (!preg_match("/^[a-zA-Z'\s]+$/u", $nama)) {
+            $errorMsg = "Nama hanya boleh berisi huruf, spasi, dan tanda petik satu (').";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errorMsg = 'Format email tidak valid.';
+        } elseif (!preg_match('/^(\+62|0)\d{6,13}$/', $telepon)) {
+            $errorMsg = 'Nomor telepon tidak valid. Awali dengan 08, 0362 (kantor), atau +62.';
+        } elseif (!in_array($jk, $validJk)) {
+            $errorMsg = 'Pilih jenis kelamin.';
+        } elseif (!in_array($pendidikan, $validPendidikan)) {
+            $errorMsg = 'Pilih pendidikan tertinggi.';
+        } elseif (!in_array($kelompok_umur, $validUmur)) {
+            $errorMsg = 'Pilih kelompok umur.';
+        } elseif (empty($pekerjaan)) {
+            $errorMsg = 'Pekerjaan wajib diisi.';
+        } elseif (empty($instansi)) {
+            $errorMsg = 'Instansi / organisasi wajib diisi.';
+        } elseif (!in_array($pemanfaatan, $validPemanfaatan)) {
+            $errorMsg = 'Pilih pemanfaatan hasil data.';
+        } elseif (!in_array($jenis_pelayanan, $validJenisPelayanan)) {
+            $errorMsg = 'Pilih jenis pelayanan.';
+        } elseif ($jenis_pelayanan === 'Pengaduan' && trim($_POST['pengaduan_text'] ?? '') === '') {
+            $errorMsg = 'Detail pengaduan wajib diisi.';
+        } elseif ($jenis_pelayanan !== 'Pengaduan' && (empty($dataNama) || count(array_filter(array_map('trim', $dataNama))) === 0)) {
+            $errorMsg = 'Tambahkan minimal 1 data yang dibutuhkan.';
+        } else {
+            $records = [];
+            if ($jenis_pelayanan === 'Pengaduan') {
+                $records[] = ['data' => trim($_POST['pengaduan_text']), 'tahun_dari' => 0, 'tahun_sampai' => 0];
+            } else {
+                for ($i = 0; $i < count($dataNama); $i++) {
+                    $dn = trim($dataNama[$i] ?? '');
+                    if ($dn === '') continue;
+                    $td = intval($tahunDari[$i]   ?? 0);
+                    $ts = intval($tahunSampai[$i] ?? 0);
+                    $records[] = ['data' => $dn, 'tahun_dari' => $td, 'tahun_sampai' => $ts];
+                }
+            }
+            $dataJson = json_encode($records, JSON_UNESCAPED_UNICODE);
+
+            if ($revisi && $antrian) {
+                // ── UPDATE (revisi) ──────────────────────────────────────────
+                $createdAt = !empty($antrian['created_at']) ? strtotime($antrian['created_at']) : 0;
+                if ($createdAt && (time() - $createdAt) > 7200) {
+                    $errorMsg = 'Batas waktu revisi (2 jam) telah berakhir.';
+                } else {
+                    $stU = $mysqli->prepare(
+                        "UPDATE antrian SET nama=?, email=?, telepon=?, jk=?, pendidikan=?, kelompok_umur=?,
+                         pekerjaan=?, instansi=?, pemanfaatan_data=?, data_dibutuhkan=?, jenis_pelayanan=? WHERE token=?"
+                    );
+                    $stU->bind_param("ssssssssssss",
+                        $nama, $email, $telepon, $jk, $pendidikan, $kelompok_umur,
+                        $pekerjaan, $instansi, $pemanfaatan, $dataJson, $jenis_pelayanan, $token
+                    );
+                    if ($stU->execute()) {
+                        $stU->close();
+                        header('Location: ?token=' . urlencode($token));
+                        exit;
+                    }
+                    $errorMsg = 'Gagal menyimpan revisi. Silakan coba lagi.';
+                    $stU->close();
+                }
+            } else {
+                // ── INSERT baru ──────────────────────────────────────────────
+                $stmtN = $mysqli->prepare("SELECT COALESCE(MAX(nomor), 0) AS maxn FROM antrian WHERE tanggal = ? AND jenis = 'whatsapp'");
+                $stmtN->bind_param("s", $tanggal);
+                $stmtN->execute();
+                $nomor_baru = (int)$stmtN->get_result()->fetch_assoc()['maxn'] + 1;
+                $stmtN->close();
+
+                $newToken = bin2hex(random_bytes(16));
+                $stmt = $mysqli->prepare(
+                    "INSERT INTO antrian
+                        (nama, email, telepon, jk, pendidikan, kelompok_umur,
+                         pekerjaan, instansi, pemanfaatan_data, data_dibutuhkan, jenis_pelayanan,
+                         kunjungan_pst, jenis, nomor, tanggal, token)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'whatsapp', ?, ?, ?)"
+                );
+                $stmt->bind_param(
+                    "sssssssssssiss",
+                    $nama, $email, $telepon,
+                    $jk, $pendidikan, $kelompok_umur,
+                    $pekerjaan, $instansi,
+                    $pemanfaatan, $dataJson, $jenis_pelayanan,
+                    $nomor_baru, $tanggal, $newToken
+                );
+                if ($stmt->execute()) {
+                    $stmt->close();
+                    header('Location: ?token=' . urlencode($newToken));
+                    exit;
+                }
+                $errorMsg = 'Gagal menyimpan data. Silakan coba lagi.';
+                $stmt->close();
+            }
+        }
+    }
+
+    // ── Determine display mode ───────────────────────────────────────────────
+    $showPreview = ($token && $antrian && !$revisi && $_SERVER['REQUEST_METHOD'] !== 'POST');
+
+    // ── Pre-fill $old dari antrian untuk mode revisi ─────────────────────────
+    if ($revisi && $antrian && empty($old)) {
+        $old['nama']             = $antrian['nama'];
+        $old['email']            = $antrian['email'];
+        $old['telepon']          = $antrian['telepon'];
+        $old['jk']               = $antrian['jk'];
+        $old['pendidikan']       = $antrian['pendidikan'];
+        $old['kelompok_umur']    = $antrian['kelompok_umur'];
+        $old['instansi']         = $antrian['instansi'];
+        $old['pemanfaatan_data'] = $antrian['pemanfaatan_data'];
+        $old['pekerjaan']        = $antrian['pekerjaan'];
+        $old['jenis_pelayanan']  = $antrian['jenis_pelayanan'] ?? '';
+
+        $stdOpts = ['Pelajar/Mahasiswa', 'Peneliti/Dosen', 'ASN/TNI/Polri', 'Pegawai BUMN/BUMD', 'Pegawai Swasta', 'Wiraswasta'];
+        $pekerjaanVal = $antrian['pekerjaan'] ?? '';
+        if (in_array($pekerjaanVal, $stdOpts)) {
+            $old['pekerjaan_pilihan']      = $pekerjaanVal;
+            $old['pekerjaan_lainnya_text'] = '';
+        } else {
+            $old['pekerjaan_pilihan']      = 'Lainnya';
+            $old['pekerjaan_lainnya_text'] = $pekerjaanVal;
+        }
+
+        $dataItems = json_decode($antrian['data_dibutuhkan'] ?? '[]', true) ?: [];
+        if (($antrian['jenis_pelayanan'] ?? '') === 'Pengaduan') {
+            $old['pengaduan_text'] = $dataItems[0]['data'] ?? '';
+            $old['data_nama'] = $old['tahun_dari'] = $old['tahun_sampai'] = [];
+        } else {
+            $old['data_nama']    = array_column($dataItems, 'data');
+            $old['tahun_dari']   = array_column($dataItems, 'tahun_dari');
+            $old['tahun_sampai'] = array_column($dataItems, 'tahun_sampai');
+        }
+    }
+
+    $oldPekerjaanPilihan    = $old['pekerjaan_pilihan']      ?? '';
+    $oldPekerjaanLainnyaTxt = $old['pekerjaan_lainnya_text'] ?? '';
+    $oldDataNama            = $old['data_nama']               ?? [];
+    $oldTahunDari           = $old['tahun_dari']              ?? [];
+    $oldTahunSampai         = $old['tahun_sampai']            ?? [];
+    $oldJenisPelayanan      = $old['jenis_pelayanan']         ?? '';
+    $oldPengaduanText       = $old['pengaduan_text']          ?? '';
+
+    $page_title = $judul;
+    include __DIR__ . '/../app/partials/_head.php';
+    ?>
+    <style>
+        .radio-label { display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.25rem 0; }
+        .radio-label input[type=radio] { accent-color:#16a34a; width:1rem; height:1rem; flex-shrink:0; }
+    </style>
+    </head>
+    <body class="bg-gray-100 min-h-screen py-8 px-4">
+    <div class="w-full max-w-xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow">
+        <h1 class="text-xl sm:text-2xl font-bold mb-6 text-center leading-tight"><?= htmlspecialchars($judul) ?></h1>
+
+        <?php if ($showPreview): ?>
+            <?php
+            $createdAt  = !empty($antrian['created_at']) ? strtotime($antrian['created_at']) : 0;
+            $canRevise  = $createdAt && (time() - $createdAt) <= 7200;
+            $deadlineTs = $createdAt ? ($createdAt + 7200) : 0;
+            $dataItemsP = json_decode($antrian['data_dibutuhkan'] ?? '[]', true) ?: [];
+            $jkLabel    = $antrian['jk'] === 'L' ? 'Laki-laki' : 'Perempuan';
+            $jpDataLabels = [
+                'Permintaan Data'      => 'Data yang Dibutuhkan',
+                'Konsultasi Statistik' => 'Statistik yang Dikonsultasikan',
+                'Rekomendasi Statistik'=> 'Kegiatan Statistik yang Akan Dilaksanakan',
+                'Pengaduan'            => 'Detail Pengaduan',
+            ];
+            $dataPreviewLabel  = $jpDataLabels[$antrian['jenis_pelayanan'] ?? ''] ?? 'Data yang Dibutuhkan';
+            $isPengaduanPrev   = ($antrian['jenis_pelayanan'] ?? '') === 'Pengaduan';
+            ?>
+
+            <div class="mb-5 p-4 bg-green-50 border border-green-300 rounded-lg text-center">
+                <p class="text-4xl mb-1 text-green-600">&#10003;</p>
+                <p class="text-lg font-bold text-green-700">Pendaftaran Berhasil!</p>
+                <p class="text-sm text-green-600 mt-1">Data Anda telah berhasil dicatat.</p>
+            </div>
+
+            <div class="mb-5 p-3 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-800 flex items-start gap-2">
+                <span class="text-base leading-5 mt-0.5">&#9888;&#65039;</span>
+                <div>
+                    <strong>Pastikan Isian Sudah Benar</strong> — Periksa kembali data Anda di bawah ini.
+                    <?php if ($canRevise): ?>
+                        Anda masih bisa merevisi selama <strong id="countdown">...</strong>.
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- ── Preview data ── -->
+            <div class="space-y-2 text-sm mb-6">
+                <h2 class="font-semibold text-gray-500 uppercase text-xs tracking-wide border-b border-gray-200 pb-1 mb-3">Data Yang Diisikan</h2>
+                <?php
+                $rows = [
+                    'Nama Lengkap'           => $antrian['nama'],
+                    'Email'                  => $antrian['email'],
+                    'Nomor HP'               => $antrian['telepon'],
+                    'Jenis Kelamin'          => $jkLabel,
+                    'Pendidikan Tertinggi'   => $antrian['pendidikan'],
+                    'Kelompok Umur'          => $antrian['kelompok_umur'],
+                    'Pekerjaan'              => $antrian['pekerjaan'],
+                    'Instansi / Organisasi'  => $antrian['instansi'],
+                    'Pemanfaatan Data'       => $antrian['pemanfaatan_data'],
+                    'Jenis Pelayanan'        => $antrian['jenis_pelayanan'],
+                ];
+                foreach ($rows as $label => $value): ?>
+                    <div class="flex gap-2">
+                        <span class="text-gray-500 w-44 flex-shrink-0"><?= $label ?></span>
+                        <span class="font-medium text-gray-800"><?= htmlspecialchars($value ?: '-') ?></span>
+                    </div>
+                <?php endforeach; ?>
+
+                <div class="flex gap-2 items-start">
+                    <span class="text-gray-500 w-44 flex-shrink-0"><?= htmlspecialchars($dataPreviewLabel) ?></span>
+                    <div>
+                        <?php if (empty($dataItemsP)): ?>
+                            <span class="font-medium text-gray-800">-</span>
+                        <?php elseif ($isPengaduanPrev): ?>
+                            <p class="font-medium text-gray-800 whitespace-pre-line"><?= htmlspecialchars($dataItemsP[0]['data'] ?? '-') ?></p>
+                        <?php else: ?>
+                            <ul class="list-disc pl-4 space-y-0.5">
+                                <?php foreach ($dataItemsP as $item): ?>
+                                    <li class="font-medium text-gray-800">
+                                        <?= htmlspecialchars($item['data']) ?>
+                                        <?php if (!empty($item['tahun_dari']) || !empty($item['tahun_sampai'])): ?>
+                                            <span class="font-normal text-gray-500">(<?= intval($item['tahun_dari']) ?>–<?= intval($item['tahun_sampai']) ?>)</span>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <?php if ($canRevise): ?>
+                <a href="?token=<?= urlencode($token) ?>&revisi=1"
+                   class="block w-full text-center bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded font-semibold transition-colors">
+                    Revisi Isian
+                </a>
+                <script>
+                var deadline = <?= $deadlineTs ?> * 1000;
+                var btnRevisi = document.querySelector('a[href*="revisi=1"]');
+                function updateCountdown() {
+                    var remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+                    var m = Math.floor(remaining / 60);
+                    var s = remaining % 60;
+                    var el = document.getElementById('countdown');
+                    if (el) el.textContent = m + ' menit ' + (s < 10 ? '0' + s : s) + ' detik lagi';
+                    if (remaining === 0 && btnRevisi) {
+                        btnRevisi.remove();
+                        if (el) el.closest('div').innerHTML = 'Batas waktu revisi telah berakhir.';
+                    }
+                }
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+                </script>
+            <?php else: ?>
+                <p class="text-center text-sm text-gray-400 mt-2 italic">Batas waktu revisi (2 jam) telah berakhir.</p>
+            <?php endif; ?>
+
+        <?php elseif ($revisi && !$antrian): ?>
+            <div class="p-6 bg-red-50 border border-red-300 rounded text-center text-red-700 text-sm">
+                Link revisi tidak valid atau telah kedaluwarsa.
+            </div>
+
+        <?php else: ?>
+            <!-- ── FORM (baru atau revisi) ── -->
+            <?php if (!empty($errorMsg)): ?>
+                <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-5 text-sm">
+                    <?= htmlspecialchars($errorMsg) ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($revisi): ?>
+                <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-800 flex items-start gap-2">
+                    <span class="text-base leading-5 mt-0.5">&#9998;</span>
+                    <span>Anda sedang <strong>merevisi isian</strong>. Perubahan akan menggantikan data sebelumnya.</span>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="?token=<?= htmlspecialchars($token) ?><?= $revisi ? '&revisi=1' : '' ?>"
+                  class="space-y-6 text-sm" id="formWa" autocomplete="off" novalidate>
+
+                <!-- 1. Nama -->
+                <div>
+                    <label class="block mb-1 font-semibold">Nama Lengkap <span class="text-red-500">*</span></label>
+                    <input name="nama" required placeholder="Nama lengkap Anda"
+                           value="<?= htmlspecialchars($old['nama'] ?? '') ?>"
+                           class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-green-500">
+                </div>
+
+                <!-- 2. Email -->
+                <div>
+                    <label class="block mb-1 font-semibold">Email <span class="text-red-500">*</span></label>
+                    <input name="email" type="email" required placeholder="contoh@email.com"
+                           value="<?= htmlspecialchars($old['email'] ?? '') ?>"
+                           class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-green-500">
+                </div>
+
+                <!-- 3. Nomor HP -->
+                <div>
+                    <label class="block mb-1 font-semibold">Nomor HP <span class="text-red-500">*</span></label>
+                    <input name="telepon" required placeholder="08xx / 0362xxxxxx"
+                           value="<?= htmlspecialchars($old['telepon'] ?? '') ?>"
+                           class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-green-500">
+                </div>
+
+                <!-- 4. Jenis Kelamin -->
+                <div>
+                    <label class="block mb-2 font-semibold">Jenis Kelamin <span class="text-red-500">*</span></label>
+                    <div class="flex gap-6">
+                        <?php foreach (['L' => 'Laki-laki', 'P' => 'Perempuan'] as $val => $lbl): ?>
+                            <label class="radio-label">
+                                <input type="radio" name="jk" value="<?= $val ?>"
+                                       <?= ($old['jk'] ?? '') === $val ? 'checked' : '' ?>>
+                                <?= $lbl ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 5. Pendidikan -->
+                <div>
+                    <label class="block mb-2 font-semibold">Pendidikan Tertinggi <span class="text-red-500">*</span></label>
+                    <div>
+                        <?php foreach (['SLTA/Sederajat', 'D1/D2/D3', 'D4/S1', 'S2', 'S3'] as $p): ?>
+                            <label class="radio-label">
+                                <input type="radio" name="pendidikan" value="<?= $p ?>"
+                                       <?= ($old['pendidikan'] ?? '') === $p ? 'checked' : '' ?>>
+                                <?= $p ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 6. Umur -->
+                <div>
+                    <label class="block mb-2 font-semibold">Umur <span class="text-red-500">*</span></label>
+                    <div>
+                        <?php foreach ([
+                            'di bawah 17 tahun', '17 - 25 tahun', '26 - 34 tahun',
+                            '35 - 44 tahun', '45 - 54 tahun', '55 - 65 tahun', 'di atas 65 tahun'
+                        ] as $u): ?>
+                            <label class="radio-label">
+                                <input type="radio" name="kelompok_umur" value="<?= $u ?>"
+                                       <?= ($old['kelompok_umur'] ?? '') === $u ? 'checked' : '' ?>>
+                                <?= $u ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 7. Pekerjaan -->
+                <div>
+                    <label class="block mb-2 font-semibold">Pekerjaan <span class="text-red-500">*</span></label>
+                    <div>
+                        <?php
+                        $pekerjaanOptions = [
+                            'Pelajar/Mahasiswa', 'Peneliti/Dosen', 'ASN/TNI/Polri',
+                            'Pegawai BUMN/BUMD', 'Pegawai Swasta', 'Wiraswasta', 'Lainnya'
+                        ];
+                        foreach ($pekerjaanOptions as $pj):
+                        ?>
+                            <label class="radio-label">
+                                <input type="radio" name="pekerjaan_pilihan" value="<?= $pj ?>"
+                                       <?= $oldPekerjaanPilihan === $pj ? 'checked' : '' ?>
+                                       <?= $pj === 'Lainnya' ? 'id="pekerjaan_lainnya_radio"' : '' ?>>
+                                <?= $pj ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <input type="text" id="pekerjaan_lainnya_input" name="pekerjaan_lainnya_text"
+                           placeholder="Sebutkan pekerjaan Anda"
+                           value="<?= htmlspecialchars($oldPekerjaanLainnyaTxt) ?>"
+                           class="mt-2 w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-green-500 <?= $oldPekerjaanPilihan === 'Lainnya' ? '' : 'hidden' ?>">
+                    <input type="hidden" name="pekerjaan" id="pekerjaan_hidden"
+                           value="<?= htmlspecialchars($old['pekerjaan'] ?? '') ?>">
+                </div>
+
+                <!-- 8. Instansi -->
+                <div>
+                    <label class="block mb-1 font-semibold">Asal Instansi / Organisasi <span class="text-red-500">*</span></label>
+                    <input name="instansi" required placeholder="Nama instansi atau organisasi Anda"
+                           value="<?= htmlspecialchars($old['instansi'] ?? '') ?>"
+                           class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-green-500">
+                </div>
+
+                <!-- 9. Pemanfaatan Hasil -->
+                <div>
+                    <label class="block mb-2 font-semibold">Pemanfaatan Hasil <span class="text-red-500">*</span></label>
+                    <div>
+                        <?php foreach ([
+                            'Tugas Sekolah/Tugas Kuliah', 'Pemerintahan',
+                            'Komersial', 'Penelitian', 'Lainnya'
+                        ] as $pf): ?>
+                            <label class="radio-label">
+                                <input type="radio" name="pemanfaatan_data" value="<?= $pf ?>"
+                                       <?= ($old['pemanfaatan_data'] ?? '') === $pf ? 'checked' : '' ?>>
+                                <?= $pf ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 10. Jenis Pelayanan -->
+                <div>
+                    <label class="block mb-2 font-semibold">Jenis Pelayanan <span class="text-red-500">*</span></label>
+                    <div>
+                        <?php foreach (['Permintaan Data', 'Konsultasi Statistik', 'Rekomendasi Statistik', 'Pengaduan'] as $jp): ?>
+                            <label class="radio-label">
+                                <input type="radio" name="jenis_pelayanan" value="<?= $jp ?>"
+                                       <?= $oldJenisPelayanan === $jp ? 'checked' : '' ?>>
+                                <?= $jp ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 11a. Data yang Dibutuhkan (Permintaan Data / Konsultasi Statistik / Rekomendasi Statistik) -->
+                <div id="data-section">
+                    <label class="block mb-1 font-semibold"><span id="data-section-label">Data yang Dibutuhkan</span> <span class="text-red-500">*</span></label>
+                    <p class="text-gray-500 text-xs mb-3">Tambahkan satu atau lebih data yang Anda butuhkan beserta rentang tahunnya.</p>
+                    <div id="data-container" class="space-y-3"></div>
+                    <button type="button" id="btn-tambah-data"
+                            class="mt-3 text-green-700 border border-green-600 px-4 py-1.5 rounded text-sm hover:bg-green-50 transition-colors">
+                        + Tambah Data
+                    </button>
+                </div>
+
+                <!-- 11b. Detail Pengaduan (Pengaduan) -->
+                <div id="pengaduan-section" class="hidden">
+                    <label class="block mb-1 font-semibold">Detail Pengaduan <span class="text-red-500">*</span></label>
+                    <p class="text-gray-500 text-xs mb-3">Jelaskan pengaduan atau keluhan Anda secara rinci.</p>
+                    <textarea id="pengaduan_text" name="pengaduan_text" rows="5"
+                              placeholder="Tulis detail pengaduan di sini…"
+                              class="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-green-500"><?= htmlspecialchars($oldPengaduanText) ?></textarea>
+                </div>
+
+                <button type="submit"
+                        class="bg-green-600 hover:bg-green-700 text-white w-full py-2.5 rounded font-semibold transition-colors">
+                    <?= $revisi ? 'Simpan Revisi' : 'Kirim Data' ?>
+                </button>
+            </form>
+
+            <script>
+            // ── Pekerjaan toggle ──────────────────────────────────────────────
+            const pekerjaanRadios = document.querySelectorAll('input[name="pekerjaan_pilihan"]');
+            const lainnyaRadio    = document.getElementById('pekerjaan_lainnya_radio');
+            const lainnyaInput    = document.getElementById('pekerjaan_lainnya_input');
+            const pekerjaanHidden = document.getElementById('pekerjaan_hidden');
+
+            pekerjaanRadios.forEach(function(r) {
+                r.addEventListener('change', function() {
+                    if (lainnyaRadio.checked) {
+                        lainnyaInput.classList.remove('hidden');
+                        lainnyaInput.focus();
+                    } else {
+                        lainnyaInput.classList.add('hidden');
+                        lainnyaInput.value = '';
+                    }
+                });
+            });
+
+            // ── Jenis Pelayanan — label dinamis & toggle Pengaduan ───────────
+            var _jpLabels = {
+                'Permintaan Data':       {big: 'Data yang Dibutuhkan',                      small: 'Data yang dibutuhkan'},
+                'Konsultasi Statistik':  {big: 'Statistik yang Dikonsultasikan',            small: 'Statistik yang dikonsultasikan'},
+                'Rekomendasi Statistik': {big: 'Kegiatan Statistik yang Akan Dilaksanakan', small: 'Kegiatan Statistik yang akan dilaksanakan'}
+            };
+
+            function currentJp() {
+                var el = document.querySelector('input[name="jenis_pelayanan"]:checked');
+                return el ? el.value : '';
+            }
+            function currentJpLabel() {
+                return _jpLabels[currentJp()] || _jpLabels['Permintaan Data'];
+            }
+
+            function refreshDataLabels() {
+                var jp          = currentJp();
+                var isPengaduan = jp === 'Pengaduan';
+                var dataSec     = document.getElementById('data-section');
+                var pengSec     = document.getElementById('pengaduan-section');
+                if (dataSec) dataSec.classList.toggle('hidden', isPengaduan);
+                if (pengSec) pengSec.classList.toggle('hidden', !isPengaduan);
+                if (isPengaduan) return;
+
+                var lbl = currentJpLabel();
+                var sec = document.getElementById('data-section-label');
+                if (sec) sec.textContent = lbl.big;
+                document.querySelectorAll('.data-row-label').forEach(function(el) {
+                    el.textContent = lbl.small;
+                });
+            }
+
+            document.querySelectorAll('input[name="jenis_pelayanan"]').forEach(function(r) {
+                r.addEventListener('change', refreshDataLabels);
+            });
+
+            // ── Data yang Dibutuhkan ──────────────────────────────────────────
+            const container = document.getElementById('data-container');
+
+            function escHtml(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            function createRecord(data, dari, sampai) {
+                data = data || ''; dari = dari || ''; sampai = sampai || '';
+                var lbl = currentJpLabel().small;
+                var div = document.createElement('div');
+                div.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50 relative';
+                div.innerHTML =
+                    '<button type="button" onclick="removeRecord(this)" ' +
+                    '        class="absolute top-2 right-3 text-gray-400 hover:text-red-500 text-xl leading-none" ' +
+                    '        title="Hapus baris ini">&times;</button>' +
+                    '<div class="mb-2">' +
+                    '  <label class="block text-xs text-gray-600 mb-1 font-medium data-row-label">' + escHtml(lbl) + '</label>' +
+                    '  <input type="text" name="data_nama[]" required ' +
+                    '         placeholder="Contoh: Data jumlah penduduk" ' +
+                    '         value="' + escHtml(data) + '" ' +
+                    '         class="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-green-500">' +
+                    '</div>' +
+                    '<div class="flex gap-3">' +
+                    '  <div class="flex-1">' +
+                    '    <label class="block text-xs text-gray-600 mb-1 font-medium">Tahun dari</label>' +
+                    '    <input type="number" name="tahun_dari[]" min="1900" max="2100" ' +
+                    '           placeholder="2020" value="' + escHtml(dari) + '" ' +
+                    '           class="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-green-500">' +
+                    '  </div>' +
+                    '  <div class="flex-1">' +
+                    '    <label class="block text-xs text-gray-600 mb-1 font-medium">Tahun sampai</label>' +
+                    '    <input type="number" name="tahun_sampai[]" min="1900" max="2100" ' +
+                    '           placeholder="2024" value="' + escHtml(sampai) + '" ' +
+                    '           class="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-green-500">' +
+                    '  </div>' +
+                    '</div>';
+                return div;
+            }
+
+            function removeRecord(btn) {
+                if (container.children.length > 1) {
+                    btn.closest('.border').remove();
+                } else {
+                    alert('Minimal harus ada 1 data yang dibutuhkan.');
+                }
+            }
+
+            document.getElementById('btn-tambah-data').addEventListener('click', function() {
+                container.appendChild(createRecord());
+            });
+
+            <?php
+            if (empty($oldDataNama)) {
+                echo "container.appendChild(createRecord());";
+            } else {
+                for ($i = 0; $i < count($oldDataNama); $i++):
+                    $dn = json_encode($oldDataNama[$i] ?? '');
+                    $td = json_encode($oldTahunDari[$i]   ?? '');
+                    $ts = json_encode($oldTahunSampai[$i] ?? '');
+                    echo "container.appendChild(createRecord($dn, $td, $ts));";
+                endfor;
+            }
+            ?>
+            refreshDataLabels();
+
+            // ── Form Validation ───────────────────────────────────────────────
+            document.getElementById('formWa').addEventListener('submit', function(e) {
+                var nama = document.querySelector('input[name="nama"]').value.trim();
+                if (!nama) { alert('Nama lengkap wajib diisi.'); e.preventDefault(); return; }
+                if (!/^[a-zA-Z'\s]+$/.test(nama)) {
+                    alert("Nama hanya boleh berisi huruf, spasi, dan tanda petik satu (').");
+                    e.preventDefault(); return;
+                }
+
+                var email = document.querySelector('input[name="email"]').value.trim();
+                if (!email) { alert('Email wajib diisi.'); e.preventDefault(); return; }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    alert('Format email tidak valid.'); e.preventDefault(); return;
+                }
+
+                var telepon = document.querySelector('input[name="telepon"]').value.trim();
+                if (!/^(\+62|0)\d{6,13}$/.test(telepon)) {
+                    alert('Nomor telepon tidak valid. Awali dengan 08, 0362 (kantor), atau +62.');
+                    e.preventDefault(); return;
+                }
+
+                if (!document.querySelector('input[name="jk"]:checked')) {
+                    alert('Pilih jenis kelamin.'); e.preventDefault(); return;
+                }
+                if (!document.querySelector('input[name="pendidikan"]:checked')) {
+                    alert('Pilih pendidikan tertinggi.'); e.preventDefault(); return;
+                }
+                if (!document.querySelector('input[name="kelompok_umur"]:checked')) {
+                    alert('Pilih kelompok umur.'); e.preventDefault(); return;
+                }
+
+                var pekerjaanPilihan = document.querySelector('input[name="pekerjaan_pilihan"]:checked');
+                if (!pekerjaanPilihan) { alert('Pilih pekerjaan.'); e.preventDefault(); return; }
+                if (pekerjaanPilihan.value === 'Lainnya') {
+                    var lainnyaVal = lainnyaInput.value.trim();
+                    if (!lainnyaVal) {
+                        alert('Sebutkan pekerjaan Anda pada kolom "Lainnya".');
+                        lainnyaInput.focus(); e.preventDefault(); return;
+                    }
+                    pekerjaanHidden.value = lainnyaVal;
+                } else {
+                    pekerjaanHidden.value = pekerjaanPilihan.value;
+                }
+
+                if (!document.querySelector('input[name="instansi"]').value.trim()) {
+                    alert('Asal instansi / organisasi wajib diisi.'); e.preventDefault(); return;
+                }
+                if (!document.querySelector('input[name="pemanfaatan_data"]:checked')) {
+                    alert('Pilih pemanfaatan hasil data.'); e.preventDefault(); return;
+                }
+                if (!document.querySelector('input[name="jenis_pelayanan"]:checked')) {
+                    alert('Pilih jenis pelayanan.'); e.preventDefault(); return;
+                }
+
+                // Pengaduan: validate textarea only, skip data array checks
+                if (currentJp() === 'Pengaduan') {
+                    var pengaduanEl = document.getElementById('pengaduan_text');
+                    if (!pengaduanEl || !pengaduanEl.value.trim()) {
+                        alert('Detail pengaduan wajib diisi.');
+                        if (pengaduanEl) pengaduanEl.focus();
+                        e.preventDefault(); return;
+                    }
+                    return;
+                }
+
+                var dataNamas = document.querySelectorAll('input[name="data_nama[]"]');
+                if (dataNamas.length === 0) {
+                    alert('Tambahkan minimal 1 data yang dibutuhkan.'); e.preventDefault(); return;
+                }
+                var hasData = false;
+                for (var i = 0; i < dataNamas.length; i++) {
+                    if (dataNamas[i].value.trim() !== '') { hasData = true; break; }
+                }
+                if (!hasData) {
+                    alert('Isi nama data pada minimal 1 baris data yang dibutuhkan.');
+                    e.preventDefault(); return;
+                }
+
+                var tahunDariArr   = document.querySelectorAll('input[name="tahun_dari[]"]');
+                var tahunSampaiArr = document.querySelectorAll('input[name="tahun_sampai[]"]');
+                for (var j = 0; j < dataNamas.length; j++) {
+                    if (!dataNamas[j].value.trim()) continue;
+                    var td = parseInt(tahunDariArr[j].value);
+                    var ts = parseInt(tahunSampaiArr[j].value);
+                    if (isNaN(td) || td < 1900 || td > 2100) {
+                        alert('Tahun dari tidak valid pada data ke-' + (j+1) + '. Masukkan tahun antara 1900–2100.');
+                        tahunDariArr[j].focus(); e.preventDefault(); return;
+                    }
+                    if (isNaN(ts) || ts < 1900 || ts > 2100) {
+                        alert('Tahun sampai tidak valid pada data ke-' + (j+1) + '. Masukkan tahun antara 1900–2100.');
+                        tahunSampaiArr[j].focus(); e.preventDefault(); return;
+                    }
+                    if (ts < td) {
+                        alert('Tahun sampai tidak boleh lebih kecil dari tahun dari pada data ke-' + (j+1) + '.');
+                        tahunSampaiArr[j].focus(); e.preventDefault(); return;
+                    }
+                }
+            });
+            </script>
+
+        <?php endif; ?>
+    </div>
+    </body>
+    </html>
+    <?php
+}
+?>

@@ -1,9 +1,15 @@
 # Membangun paket deploy bersih: deploy/pst-deploy.zip
-# Memakai System.IO.Compression dengan separator "/" agar ekstraksi di
-# cPanel/Linux benar (Compress-Archive PS 5.1 memakai "\" yang bisa merusak
-# struktur folder saat di-unzip di server).
 #
-# Jalankan dari mana saja; skrip pindah ke root repo secara otomatis.
+# Struktur aplikasi sudah "rata": folder root = folder yang dilayani web,
+# kode privat ada di subfolder app/. Tidak ada .htaccess/mod_rewrite yang
+# dibutuhkan — hosting produksi memakai nginx yang mengabaikan .htaccess.
+#
+# PENTING (nginx): karena .htaccess diabaikan di produksi, berkas NON-PHP
+# apa pun yang ikut terunggah BISA DIUNDUH publik. Karena itu folder berisi
+# data sensitif (sql_production, backup, input, .git) WAJIB dikecualikan.
+#
+# Memakai System.IO.Compression dengan separator "/" agar ekstraksi di
+# cPanel/Linux benar (Compress-Archive PS 5.1 memakai "\").
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
@@ -11,30 +17,30 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $repo = Split-Path -Parent $PSScriptRoot   # folder root repo (parent dari deploy/)
 
-# Hanya item ini yang masuk paket (input/, backup/, .git/, tests/, *.zip tidak ikut)
-$items = @(
-    '.htaccess',
-    'app',
-    'public',
-    'vendor',
-    'templat',
-    'sql_production',
-    'composer.json',
-    'composer.lock'
+# JANGAN diunggah ke server (sensitif / tidak perlu / bisa diunduh publik di nginx)
+$exclude = @(
+    '.git',            # seluruh riwayat & source — fatal bila bocor
+    '.claude',
+    'backup',          # dump database
+    'input',           # data pribadi
+    'sql_production',  # berkas .sql — bisa diunduh mentah di nginx
+    'tests',
+    'deploy',          # folder ini sendiri
+    'node_modules',
+    '.gitignore'
 )
 
-$missing = $items | Where-Object { -not (Test-Path (Join-Path $repo $_)) }
-if ($missing) { throw "Item tidak ditemukan: $($missing -join ', ')" }
+$items = Get-ChildItem -LiteralPath $repo -Force |
+    Where-Object { $exclude -notcontains $_.Name -and $_.Extension -ne '.zip' }
 
 # Kumpulkan semua file (termasuk dotfile lewat -Force)
 $files = New-Object System.Collections.Generic.List[string]
 foreach ($it in $items) {
-    $p = Join-Path $repo $it
-    if (Test-Path -LiteralPath $p -PathType Leaf) {
-        $files.Add((Resolve-Path -LiteralPath $p).Path)
-    } else {
-        Get-ChildItem -LiteralPath $p -Recurse -File -Force |
+    if ($it.PSIsContainer) {
+        Get-ChildItem -LiteralPath $it.FullName -Recurse -File -Force |
             ForEach-Object { $files.Add($_.FullName) }
+    } else {
+        $files.Add($it.FullName)
     }
 }
 
@@ -54,4 +60,6 @@ try {
 }
 
 $mb = [math]::Round((Get-Item $dest).Length / 1MB, 1)
-Write-Host "OK -> $dest ($mb MB, $($files.Count) file, separator '/')"
+Write-Host "OK -> $dest ($mb MB, $($files.Count) file)"
+Write-Host "Isi top-level:"
+$items | ForEach-Object { "  - $($_.Name)" }

@@ -1,40 +1,46 @@
 # Paket Deploy — aplikasi PST ke `satset.statsbali.id/pst`
 
-Ringkas. Panduan lengkap & konsep multi-aplikasi ada di [`../DEPLOY-CPANEL.md`](../DEPLOY-CPANEL.md).
+Panduan lengkap & konsep multi-aplikasi: [`../DEPLOY-CPANEL.md`](../DEPLOY-CPANEL.md).
+
+> **Hosting ini memakai nginx** → `.htaccess` **diabaikan total**. Aplikasi
+> karena itu dirancang berjalan tanpa `.htaccess`: struktur folder = struktur URL.
 
 ## Isi paket
 | Berkas | Tujuan di server |
 |---|---|
-| `pst-deploy.zip` | Diekstrak ke dalam folder **`pst/`** di document root subdomain |
-| `docroot.htaccess` | (Opsional) diganti nama jadi **`.htaccess`** dan ditaruh di **document root** (parent dari `pst/`) untuk menjaga link/QR lama |
+| `pst-deploy.zip` | Diekstrak ke dalam folder **`pst/`** di document root |
+| `docroot-index.html` | (Opsional) → rename **`index.html`**, taruh di **document root** (daftar aplikasi) |
+| `docroot-redirects/` | (Opsional) → isinya diunggah ke **document root**, agar link/QR lama (`/umum`, `/penilaian/?token=…`) tetap hidup lewat redirect PHP 301 |
+| `build-zip.ps1` | Membangun ulang `pst-deploy.zip` |
 
-## Yang IKUT di dalam `pst-deploy.zip`
+## Struktur benar setelah ekstrak
 ```
-.htaccess            ← funnel ke public/
-app/                 ← config, db, partials (privat)
-public/              ← folder web (dilayani)
-vendor/              ← dependency (sudah disertakan, tak perlu composer di server)
-templat/             ← kop cetak (dipakai halaman detail, privat)
-sql_production/      ← file SQL untuk import DB (privat)
-composer.json, composer.lock
+pst/
+├── index.php          ← HARUS ada langsung di sini (bukan di dalam public/)
+├── menu.php
+├── app/               ← privat: config.php, db.php, partials/
+├── vendor/  templat/
+├── action/ cs/ form/ laporan/ absensi/ penilaian/ ...
+└── .user.ini          ← session.name unik
 ```
 
-## Yang TIDAK diikutkan (sengaja)
-`.git/`, `.claude/`, `input/`, `backup/`, `tests/`, `node_modules/`, `*.zip`, folder `deploy/` ini sendiri.
+## Yang TIDAK diikutkan (sengaja — akan bisa diunduh publik di nginx)
+`.git/`, `backup/`, `input/`, `sql_production/`, `tests/`, `deploy/`, `node_modules/`, `*.zip`
+
+> Butuh berkas SQL untuk import database? Ambil dari folder `sql_production/`
+> di repo lokal, import lewat phpMyAdmin, dan **jangan** unggah berkasnya.
 
 ## Langkah singkat
-1. **File Manager** → document root subdomain → buat folder `pst`.
-2. Unggah `pst-deploy.zip` ke `pst/` → **Extract**.
-3. Edit `pst/app/config.php`: set `ENV = 'production'` + isi kredensial DB.
-4. **MySQL Databases**: buat DB + user (All Privileges) → **phpMyAdmin** import dari `pst/sql_production/`.
-   (Untuk pemasangan baru, mulai dari `dbsatset_20260625.sql`, lalu jalankan file `migration_*.sql` bila perlu.)
-5. (Opsional) taruh `docroot.htaccess` → `.htaccess` di document root agar link lama tetap hidup.
+1. File Manager → document root `~/satset.statsbali.id/` → buat folder `pst`.
+2. Masuk `pst/` → Upload `pst-deploy.zip` → **Extract**.
+3. Edit `pst/app/config.php` → `define('ENV', 'production');` + cek kredensial DB.
+4. (Opsional) `docroot-index.html` → `index.html` di document root.
+5. (Opsional) unggah isi `docroot-redirects/` ke document root.
 6. Buka `https://satset.statsbali.id/pst`.
+7. **Hapus** sisa berkas aplikasi lama yang masih langsung di document root
+   (`app/`, `public/`, `vendor/`, …) — kalau tidak, semuanya terekspos.
 
-## Membuat ulang zip (dari mesin lokal)
-Jalankan skrip `deploy/build-zip.ps1`, atau perintah manual di root repo:
+## Membuat ulang zip
 ```powershell
-$items = '.htaccess','app','public','vendor','templat','sql_production','composer.json','composer.lock'
-Compress-Archive -Path $items -DestinationPath ..\pst-deploy.zip -Force
+.\deploy\build-zip.ps1
 ```
-Catatan: `input/`, `backup/`, `.git/` otomatis tidak ikut karena tidak masuk daftar `$items`.
