@@ -196,7 +196,7 @@ include __DIR__ . '/../../app/partials/_head.php';
 
 <!-- ── Print Header (only visible when printing) ────────────────────────────── -->
 <div class="print-only print-header px-0">
-    <?php include '../templat/kop_html.php'; ?>
+    <?php include __DIR__ . '/../../templat/kop_html.php'; ?>
     <h2 class="print-title-pdf1" style="display:none;font-size:11pt;font-weight:bold;color:#000;text-align:center;margin:1rem 0 0.2rem;">
         DAFTAR KEBUTUHAN DATA PENGUNJUNG PST
     </h2>
