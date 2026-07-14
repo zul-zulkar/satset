@@ -71,21 +71,25 @@ if (!$stmt->execute()) {
 }
 $stmt->close();
 
-// Simpan link_surat_balasan ke tabel pes — INSERT jika belum ada, UPDATE jika sudah ada
-$chk = $mysqli->prepare("SELECT id FROM pes WHERE antrian_id=? LIMIT 1");
-$chk->bind_param("i", $id);
-$chk->execute();
-$chk->store_result();
-if ($chk->num_rows > 0) {
-    $chk->close();
-    $stmt2 = $mysqli->prepare("UPDATE pes SET link_surat_balasan=? WHERE antrian_id=?");
-    $stmt2->bind_param("si", $link_surat_balasan, $id);
-} else {
-    $chk->close();
-    $stmt2 = $mysqli->prepare("INSERT INTO pes (antrian_id, link_surat_balasan) VALUES (?,?)");
-    $stmt2->bind_param("is", $id, $link_surat_balasan);
+// Simpan link_surat_balasan ke tabel pes — hanya jika ada nilainya, agar
+// edit data pengunjung biasa tidak membuat baris pes kosong (yang membuat
+// status "sudah PES" salah tertandai meski PES belum pernah diisi).
+if ($link_surat_balasan !== null) {
+    $chk = $mysqli->prepare("SELECT id FROM pes WHERE antrian_id=? LIMIT 1");
+    $chk->bind_param("i", $id);
+    $chk->execute();
+    $chk->store_result();
+    if ($chk->num_rows > 0) {
+        $chk->close();
+        $stmt2 = $mysqli->prepare("UPDATE pes SET link_surat_balasan=? WHERE antrian_id=?");
+        $stmt2->bind_param("si", $link_surat_balasan, $id);
+    } else {
+        $chk->close();
+        $stmt2 = $mysqli->prepare("INSERT INTO pes (antrian_id, link_surat_balasan) VALUES (?,?)");
+        $stmt2->bind_param("is", $id, $link_surat_balasan);
+    }
+    $stmt2->execute();
+    $stmt2->close();
 }
-$stmt2->execute();
-$stmt2->close();
 
 echo json_encode(['success' => true]);
