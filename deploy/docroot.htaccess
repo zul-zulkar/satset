@@ -19,6 +19,10 @@
 #  /simpeg, dll. tidak akan tersentuh).
 # =====================================================================
 
+# Jangan tampilkan daftar isi folder (docroot kini hanya wadah folder aplikasi).
+Options -Indexes
+DirectoryIndex index.html index.php
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 

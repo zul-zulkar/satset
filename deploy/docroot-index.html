@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+  Halaman pengantar untuk DOCUMENT ROOT subdomain (wadah multi-aplikasi).
+
+  Letakkan sebagai:  ~/satset.statsbali.id/index.html
+  Tujuan: saat orang membuka https://satset.statsbali.id/ (tanpa nama aplikasi),
+  mereka melihat daftar aplikasi — bukan "Index of /" atau error 403.
+
+  Menambah aplikasi baru: salin satu blok <a class="app"> di bawah.
+-->
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aplikasi — BPS Kabupaten Buleleng</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex items-center justify-center p-6">
+
+  <main class="w-full max-w-2xl">
+    <header class="text-center mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">Aplikasi Internal</h1>
+      <p class="text-gray-400 mt-1">BPS Kabupaten Buleleng</p>
+    </header>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+
+      <a class="app block rounded-2xl p-5 bg-white/5 hover:bg-white/10 border border-white/10 transition"
+         href="/pst">
+        <div class="text-lg font-semibold">PST / Antrean</div>
+        <p class="text-sm text-gray-400 mt-1">Buku tamu, antrean, survei kepuasan, laporan</p>
+        <div class="text-xs text-gray-500 mt-3 font-mono">/pst</div>
+      </a>
+
+      <!-- Tambah aplikasi baru: salin blok di atas, ganti href, judul, dan path.
+      <a class="app block rounded-2xl p-5 bg-white/5 hover:bg-white/10 border border-white/10 transition"
+         href="/simpeg">
+        <div class="text-lg font-semibold">SIMPEG</div>
+        <p class="text-sm text-gray-400 mt-1">Deskripsi singkat aplikasi</p>
+        <div class="text-xs text-gray-500 mt-3 font-mono">/simpeg</div>
+      </a>
+      -->
+
+    </div>
+  </main>
+
+</body>
+</html>
