@@ -677,8 +677,8 @@ function makeLinkEditor(prefix, endpoint, color, editFn) {
     }
     return { edit: edit, cancel: cancel, save: save };
 }
-var _editorSurat   = makeLinkEditor('link-surat',  '/action/save_link_surat.php',         'blue', 'editLinkSurat');
-var _editorBalasan = makeLinkEditor('link-balasan', '/action/save_link_surat_balasan.php', 'teal', 'editLinkBalasan');
+var _editorSurat   = makeLinkEditor('link-surat',  '/action/surat/save_link_surat.php',         'blue', 'editLinkSurat');
+var _editorBalasan = makeLinkEditor('link-balasan', '/action/surat/save_link_surat_balasan.php', 'teal', 'editLinkBalasan');
 function editLinkSurat()    { _editorSurat.edit(); }
 function cancelLinkSurat()  { _editorSurat.cancel(); }
 function saveLinkSurat()    { _editorSurat.save(); }

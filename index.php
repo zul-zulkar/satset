@@ -279,7 +279,7 @@ include __DIR__ . '/app/partials/_head.php';
 
         // ── Auto-refresh total pengunjung setiap 15 detik ────────────────────
         function refreshStats() {
-            fetch(APP_BASE + '/action/stats_today.php', {cache:'no-store'})
+            fetch(APP_BASE + '/action/antrean/stats_today.php', {cache:'no-store'})
                 .then(r => r.json())
                 .then(data => {
                     const d = data.disabilitas ?? 0;

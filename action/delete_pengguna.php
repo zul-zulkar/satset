@@ -1,17 +1,3 @@
 <?php
-include __DIR__ . '/../app/db.php';
-
-if (isset($_POST['id'])) {
-    $id = $_POST['id'];
-    
-    $stmt = $mysqli->prepare("DELETE FROM antrian WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    
-    if ($stmt->affected_rows > 0) {
-        echo "Data berhasil dihapus";
-    } else {
-        echo "Data gagal dihapus";
-    }
-}
-?>
+// Dipindah ke pengguna/delete_pengguna.php — shim ini menjaga link/cron lama tetap jalan.
+include __DIR__ . '/pengguna/delete_pengguna.php';

@@ -569,7 +569,7 @@ include __DIR__ . '/app/partials/_head.php';
             const params = new URLSearchParams();
             if (dari)   params.set('dari',   dari);
             if (sampai) params.set('sampai', sampai);
-            const res  = await fetch(APP_BASE_MENU + '/action/list_siap_penilaian.php?' + params, { cache: 'no-store' });
+            const res  = await fetch(APP_BASE_MENU + '/action/survei/list_siap_penilaian.php?' + params, { cache: 'no-store' });
             const json = await res.json();
             _surveiData = json.data || [];
             renderDaftarSurvei();
@@ -658,7 +658,7 @@ include __DIR__ . '/app/partials/_head.php';
         try {
             const fd = new FormData();
             fd.append('id', id);
-            const res  = await fetch(APP_BASE_MENU + '/action/generate_token.php', { method: 'POST', body: fd });
+            const res  = await fetch(APP_BASE_MENU + '/action/survei/generate_token.php', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
                 const idx = _surveiData.findIndex(r => parseInt(r.id) === parseInt(id));
@@ -774,7 +774,7 @@ include __DIR__ . '/app/partials/_head.php';
             const params = new URLSearchParams();
             if (dari)   params.set('dari',   dari);
             if (sampai) params.set('sampai', sampai);
-            const res  = await fetch(APP_BASE_MENU + '/action/list_siap_pes.php?' + params, { cache: 'no-store' });
+            const res  = await fetch(APP_BASE_MENU + '/action/survei/list_siap_pes.php?' + params, { cache: 'no-store' });
             const text = await res.text();
             let json;
             try { json = JSON.parse(text); } catch (_) {
@@ -899,7 +899,7 @@ include __DIR__ . '/app/partials/_head.php';
             const params = new URLSearchParams();
             if (dari)   params.set('dari',   dari);
             if (sampai) params.set('sampai', sampai);
-            const res  = await fetch(APP_BASE_MENU + '/action/list_surat_tindak_lanjut.php?' + params, { cache: 'no-store' });
+            const res  = await fetch(APP_BASE_MENU + '/action/surat/list_surat_tindak_lanjut.php?' + params, { cache: 'no-store' });
             const json = await res.json();
             if (json.error) {
                 document.getElementById('modal-surat-body').innerHTML =
@@ -1026,7 +1026,7 @@ include __DIR__ . '/app/partials/_head.php';
         try {
             const fd = new FormData();
             fd.append('id', id);
-            const res  = await fetch(APP_BASE_MENU + '/action/generate_token_pes.php', { method: 'POST', body: fd });
+            const res  = await fetch(APP_BASE_MENU + '/action/survei/generate_token_pes.php', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
                 const idx = _pesData.findIndex(r => parseInt(r.id) === parseInt(id));

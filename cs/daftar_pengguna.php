@@ -86,11 +86,11 @@ include __DIR__ . '/../app/partials/_head.php';
                 <i class="fas fa-download"></i><span class="hidden sm:inline"> Ekspor Data</span><span class="sm:hidden">Ekspor</span> <i class="fas fa-chevron-down text-xs"></i>
             </button>
             <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
-                <a href="<?= APP_BASE ?>/action/download_pengguna.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>&format=excel"
+                <a href="<?= APP_BASE ?>/action/pengguna/download_pengguna.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>&format=excel"
                    class="block px-4 py-2 text-gray-800 hover:bg-gray-100 rounded-t-md text-sm">
                     <i class="fas fa-file-excel text-green-600"></i> Ekspor ke Excel
                 </a>
-                <a href="<?= APP_BASE ?>/action/download_pengguna.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>&format=csv"
+                <a href="<?= APP_BASE ?>/action/pengguna/download_pengguna.php?bulan=<?= $bulan ?>&tahun=<?= $tahun ?>&format=csv"
                    class="block px-4 py-2 text-gray-800 hover:bg-gray-100 rounded-b-md text-sm">
                     <i class="fas fa-file-csv text-blue-600"></i> Ekspor ke CSV
                 </a>
@@ -911,7 +911,7 @@ function expandRow(tr, tableInst, isPST) {
             "<div class='bg-gray-50 p-4 expand-detail text-center text-gray-400 text-sm'>" +
             "<i class='fas fa-spinner fa-spin mr-1'></i>Memuat data penilaian...</div>"
         ).show();
-        $.getJSON(APP_BASE + '/action/get_penilaian.php?antrian_id=' + id)
+        $.getJSON(APP_BASE + '/action/pengguna/get_penilaian.php?antrian_id=' + id)
             .done(function(pData) {
                 cachedPenilaian[id] = pData;
                 var html = buildExpandDetail(tr, pData, isPST);
@@ -941,7 +941,7 @@ function openPenilaianModal(antrianId) {
     if (cachedPenilaian[antrianId] && cachedPenilaian[antrianId].found) {
         renderPenilaianModal(cachedPenilaian[antrianId]);
     } else {
-        $.getJSON(APP_BASE + '/action/get_penilaian.php?antrian_id=' + antrianId)
+        $.getJSON(APP_BASE + '/action/pengguna/get_penilaian.php?antrian_id=' + antrianId)
             .done(function(data) { cachedPenilaian[antrianId] = data; renderPenilaianModal(data); })
             .fail(function() { body.innerHTML = '<p class="text-red-500 text-center py-4">Gagal memuat data penilaian.</p>'; });
     }
@@ -1107,7 +1107,7 @@ $(document).ready(function() {
         $('.select-pst:checked').each(function() { ids.push($(this).data('id')); });
         if (!ids.length) { alert('Pilih pengguna yang ingin dihapus'); return; }
         if (confirm('Hapus ' + ids.length + ' data terpilih?'))
-            ajaxDelete(APP_BASE + '/action/delete_selected_pengguna.php', { ids: ids });
+            ajaxDelete(APP_BASE + '/action/pengguna/delete_selected_pengguna.php', { ids: ids });
     });
 });
 
@@ -1121,7 +1121,7 @@ function ajaxDelete(url, data) {
 
 function deleteUser(id) {
     if (confirm('Hapus data ini?'))
-        ajaxDelete(APP_BASE + '/action/delete_pengguna.php', { id: id });
+        ajaxDelete(APP_BASE + '/action/pengguna/delete_pengguna.php', { id: id });
 }
 
 function copySurveyLink(url) {
@@ -1355,7 +1355,7 @@ function submitEditModal() {
     };
 
     $.ajax({
-        url: APP_BASE + '/action/update_pengguna.php',
+        url: APP_BASE + '/action/pengguna/update_pengguna.php',
         method: 'POST', data: fd, dataType: 'json',
         success: function(res) {
             btn.disabled = false;
@@ -1421,7 +1421,7 @@ function generateToken(id, btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="ml-1">Membuat...</span>';
     $.ajax({
-        url: APP_BASE + '/action/generate_token.php',
+        url: APP_BASE + '/action/survei/generate_token.php',
         method: 'POST', data: { id: id }, dataType: 'json',
         success: function(res) {
             if (res.success) {
@@ -1465,7 +1465,7 @@ function generateTokenPes(id, btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="ml-1">Membuat...</span>';
     $.ajax({
-        url: APP_BASE + '/action/generate_token_pes.php',
+        url: APP_BASE + '/action/survei/generate_token_pes.php',
         method: 'POST', data: { id: id }, dataType: 'json',
         success: function(res) {
             if (res.success) {

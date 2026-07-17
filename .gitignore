@@ -26,9 +26,12 @@ Thumbs.db
 node_modules/
 
 # Data pribadi — jangan diupload
-/input/
+/internal/input/
+/internal/backup/
 
-/backup/
+# Dump database produksi — bisa diunduh mentah kalau ikut ke server (nginx
+# tidak menghormati .htaccess). Jangan pernah di-track git.
+/internal/sql_production/
 
 # Backup/archive snapshots
 *.zip
