@@ -37,6 +37,8 @@ $routes = [
     '/surat/'                        => [200],
     '/whatsapp/'                     => [200],
     '/form/buku_tamu.php'            => [200],
+    '/wa-webhook/'                   => [403],            // tanpa ?key= harus ditolak
+    '/piket/'                        => [302],            // redirect ke login absensi
 ];
 
 // Ambil base URL — pakai localhost saat run dari mesin XAMPP supaya tidak tergantung LAN IP

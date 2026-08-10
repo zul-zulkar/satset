@@ -137,7 +137,17 @@ function renderFormWhatsapp($judul) {
                     $nomor_baru, $tanggal, $newToken
                 );
                 if ($stmt->execute()) {
+                    $newAntrianId = (int)$mysqli->insert_id;
                     $stmt->close();
+                    // Notifikasi WA petugas piket — kegagalan tidak boleh
+                    // menghambat pengunjung. Revisi (UPDATE) sengaja tidak
+                    // menotifikasi ulang: link detail selalu data terbaru.
+                    try {
+                        require_once __DIR__ . '/../app/wa.php';
+                        wa_notify_new_antrian($mysqli, $newAntrianId);
+                    } catch (Throwable $e) {
+                        error_log('WA notify gagal: ' . $e->getMessage());
+                    }
                     header('Location: ?token=' . urlencode($newToken));
                     exit;
                 }

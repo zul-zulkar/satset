@@ -22,6 +22,7 @@ $suites = [
     'cs'          => 'php internal/tests/cs/run.php',
     'form'        => 'php internal/tests/form/run.php',
     'absensi'     => 'php internal/tests/absensi/run.php',
+    'wa'          => 'php internal/tests/wa/run.php',
 ];
 
 if ($filter !== null && !isset($suites[$filter])) {
