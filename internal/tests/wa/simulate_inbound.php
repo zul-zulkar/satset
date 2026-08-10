@@ -29,10 +29,12 @@ curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_POST           => true,
     CURLOPT_POSTFIELDS     => http_build_query([
-        'device'  => WA_DEVICE !== '' ? WA_DEVICE : '6280000000000',
-        'sender'  => $nomor,
-        'message' => $pesan,
-        'name'    => $nama,
+        // Nama field persis payload nyata Fonnte (Webhook Log dashboard):
+        // 'pengirim' (bukan 'sender'), 'pesan' (bukan 'message').
+        'device'   => WA_DEVICE !== '' ? WA_DEVICE : '6280000000000',
+        'pengirim' => $nomor,
+        'pesan'    => $pesan,
+        'name'     => $nama,
     ]),
     CURLOPT_TIMEOUT        => 10,
 ]);

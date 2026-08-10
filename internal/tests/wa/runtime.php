@@ -103,8 +103,10 @@ T::eq('GET webhook key benar → 200', 200, $r['code']);
 T::ok('respons "webhook aktif"', str_contains($r['body'], 'webhook aktif'));
 
 // ── 2. Pesan tanpa kata kunci → balasan menu (simulasi) ────────────────────
+// Nama field POST persis payload nyata Fonnte: 'pengirim' (bukan 'sender'),
+// 'pesan' (bukan 'message') — diverifikasi dari Webhook Log dashboard Fonnte.
 $n1 = '6289999900011';
-$r  = waPost($webhookKey, ['device' => '6280000000000', 'sender' => $n1, 'message' => 'halo selamat pagi', 'name' => 'Tester Satu']);
+$r  = waPost($webhookKey, ['device' => '6280000000000', 'pengirim' => $n1, 'pesan' => 'halo selamat pagi', 'name' => 'Tester Satu']);
 T::eq('POST "halo" → 200', 200, $r['code']);
 
 $masuk  = $logRows($n1, 'masuk');
@@ -118,13 +120,13 @@ T::ok('balasan memuat opsi menu',         str_contains($keluar[0]['pesan'] ?? ''
 
 // ── 3. Jawaban menu "1" → balasan intent Permintaan Data ───────────────────
 $n2 = '6289999900012';
-waPost($webhookKey, ['device' => '6280000000000', 'sender' => $n2, 'message' => '1', 'name' => 'Tester Dua']);
+waPost($webhookKey, ['device' => '6280000000000', 'pengirim' => $n2, 'pesan' => '1', 'name' => 'Tester Dua']);
 $keluar = $logRows($n2, 'keluar');
 T::eq('balasan intent Permintaan Data',   'Permintaan Data', $keluar[0]['intent'] ?? '');
 T::ok('balasan memuat tautan buku tamu',  str_contains($keluar[0]['pesan'] ?? '', '/whatsapp/'));
 
 // ── 4. Dedup: pesan identik dalam 60 detik tidak dibalas lagi ──────────────
-waPost($webhookKey, ['device' => '6280000000000', 'sender' => $n1, 'message' => 'halo selamat pagi', 'name' => 'Tester Satu']);
+waPost($webhookKey, ['device' => '6280000000000', 'pengirim' => $n1, 'pesan' => 'halo selamat pagi', 'name' => 'Tester Satu']);
 $masuk  = $logRows($n1, 'masuk');
 $keluar = $logRows($n1, 'keluar');
 T::eq('duplikat tercatat diabaikan',      'diabaikan', end($masuk)['status'] ?? '');
@@ -132,7 +134,7 @@ T::eq('tidak ada balasan kedua',          1, count($keluar));
 
 // ── 5. Pesan grup diabaikan ────────────────────────────────────────────────
 $n3 = '6289999900013';
-waPost($webhookKey, ['device' => '6280000000000', 'sender' => $n3, 'message' => 'minta data', 'name' => 'Grup PST', 'member' => '628111222333']);
+waPost($webhookKey, ['device' => '6280000000000', 'pengirim' => $n3, 'pesan' => 'minta data', 'name' => 'Grup PST', 'memberlid' => '628111222333']);
 $masuk  = $logRows($n3, 'masuk');
 $keluar = $logRows($n3, 'keluar');
 T::eq('pesan grup status diabaikan',      'diabaikan', $masuk[0]['status'] ?? '');
@@ -141,7 +143,7 @@ T::eq('pesan grup tidak dibalas',         0, count($keluar));
 // ── 6. Pesan dari device sendiri diabaikan (anti-loop) ─────────────────────
 $dev = wa_normalize_phone(WA_DEVICE);
 if ($dev !== null) {
-    $r = waPost($webhookKey, ['device' => WA_DEVICE, 'sender' => WA_DEVICE, 'message' => 'tes loop', 'name' => 'PST']);
+    $r = waPost($webhookKey, ['device' => WA_DEVICE, 'pengirim' => WA_DEVICE, 'pesan' => 'tes loop', 'name' => 'PST']);
     T::eq('POST dari device sendiri → 200', 200, $r['code']);
     T::ok('device sendiri: diabaikan', str_contains($r['body'], 'diabaikan'));
 } else {

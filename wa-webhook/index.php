@@ -5,8 +5,13 @@
  * URL yang didaftarkan di dashboard Fonnte (menu Device → Webhook):
  *   <APP_URL>/wa-webhook/?key=<WA_WEBHOOK_SECRET>
  *
- * Fonnte mengirim POST form-encoded untuk tiap pesan masuk; field yang
- * dipakai: sender, message, name, member (terisi bila pesan grup), device.
+ * Fonnte mengirim POST (form-encoded atau JSON tergantung konfigurasi) untuk
+ * tiap pesan masuk. Field aktual dari payload nyata (diverifikasi 2026-07-17):
+ *   pengirim  → nomor pengirim (sender)      pesan    → isi pesan (message)
+ *   name      → nama kontak                  device   → nomor PST penerima
+ *   isgroup   → true/false pesan grup         memberlid→ terisi bila pesan grup
+ * Fonnte TIDAK memakai nama field "sender"/"message" seperti sebagian
+ * dokumentasi lama — jangan ganti balik tanpa mengecek Webhook Log Fonnte.
  *
  * Alur: validasi secret → saring (grup / diri sendiri / kosong) →
  * dedup & batas balasan (hemat kuota paket gratis, anti loop) →
@@ -41,12 +46,12 @@ try {
         $in = json_decode(file_get_contents('php://input'), true) ?: [];
     }
 
-    $senderRaw = trim((string)($in['sender']  ?? ''));
-    $message   = trim((string)($in['message'] ?? ''));
-    $name      = trim((string)($in['name']    ?? ''));
-    $member    = trim((string)($in['member']  ?? ''));
-    $device    = trim((string)($in['device']  ?? ''));
-    $isGroup   = !empty($in['isgroup']) || !empty($in['isGroup']);
+    $senderRaw = trim((string)($in['pengirim'] ?? $in['sender']  ?? ''));
+    $message   = trim((string)($in['pesan']    ?? $in['message'] ?? ''));
+    $name      = trim((string)($in['name']     ?? ''));
+    $member    = trim((string)($in['memberlid'] ?? $in['member'] ?? ''));
+    $device    = trim((string)($in['device']   ?? ''));
+    $isGroup   = filter_var($in['isgroup'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $fromMe    = !empty($in['fromme'])  || !empty($in['fromMe']);
 
     $selesai = function (string $note) {
