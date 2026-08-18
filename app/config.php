@@ -101,7 +101,7 @@ $_waConf = [
         'device'      => '6281234567890',
     ],
     'production' => [
-        'token'       => 'nsNEqvqR9tzWN2otWRKkfsszkNgdVMTXbh',                    // ← isi token Fonnte saat go-live
+        'token'       => '5os39mxkK6LMKTKgVHco',                    // ← isi token Fonnte saat go-live
         'secret'      => 'e5872c63c996f7772b1880b0157a2a29',
         'fallback_hp' => '6285155001904',                    // ← isi nomor koordinator PST
         'device'      => '6285111325108',                    // ← isi nomor WA PST (628xx)
